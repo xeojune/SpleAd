@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router';
-import { getInstagramAuthUrl, exchangeCodeForToken } from '../../apis/instagramAuth';
+import { getInstagramAuthUrl, exchangeCodeForToken} from '../../apis/instagramAuth';
 import { XAuth } from '../../apis/xAuth';
+import { TikTokAuth } from '../../apis/tiktokAuth';
+import { updateUserLinkedAccounts } from '../../apis/masterAuth';
 import CheckmarkIcon from '../../components/icons/CheckmarkIcon';
 import {
   PageContainer,
@@ -29,8 +31,6 @@ import {
 import twitterIcon from '../../assets/X.png';
 import instagramIcon from '../../assets/instagram.png';
 import tiktokIcon from '../../assets/tiktok.svg';
-import youtubeIcon from '../../assets/youtube.png';
-import lemon8Icon from '../../assets/lemon.png';
 
 interface SocialLink {
   platform: string;
@@ -43,6 +43,11 @@ interface SocialLink {
   followsCount?: number;
   mediaCount?: number;
   tweetCount?: number;
+  likesCount?: number;
+  videoCount?: number;
+  isVerified?: boolean;
+  bio?: string;
+  profileUrl?: string;
 }
 
 const formatCount = (count: number): string => {
@@ -59,31 +64,47 @@ const SnsLinkPage: React.FC = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [socialLinks, setSocialLinks] = useState<SocialLink[]>(() => {
     // Try to load from localStorage first
-    const savedLinks = localStorage.getItem('socialLinks');
+    const userId = localStorage.getItem('user_id');
+    if (!userId) {
+      navigate('/login');
+      return [];
+    }
+    const savedLinks = localStorage.getItem(`socialLinks_${userId}`);
     return savedLinks ? JSON.parse(savedLinks) : [
       { platform: 'Twitter/X', username: '', icon: twitterIcon, url: '', isConnected: false },
       { platform: 'Instagram', username: '', icon: instagramIcon, url: '', isConnected: false },
       { platform: 'Tiktok', username: '', icon: tiktokIcon, url: '', isConnected: false },
-      { platform: 'YouTube', username: '', icon: youtubeIcon, url: '', isConnected: false },
-      { platform: 'Lemon8', username: '', icon: lemon8Icon, url: '', isConnected: false },
     ];
   });
 
   // Save to localStorage whenever socialLinks changes
   useEffect(() => {
-    localStorage.setItem('socialLinks', JSON.stringify(socialLinks));
+    const userId = localStorage.getItem('user_id');
+    if (userId) {
+      localStorage.setItem(`socialLinks_${userId}`, JSON.stringify(socialLinks));
+    }
   }, [socialLinks]);
 
   const handleOAuthConnect = async (platform: string) => {
     try {
       setIsProcessing(true);
+      const userId = localStorage.getItem('user_id');
+      if (!userId) {
+        console.error('No user ID found');
+        navigate('/login');
+        return;
+      }
       localStorage.setItem('lastAttemptedPlatform', platform);
+      
       if (platform === 'Instagram') {
-        const authUrl = getInstagramAuthUrl();
+        const authUrl = getInstagramAuthUrl(userId);
         window.location.href = authUrl;
       } else if (platform === 'Twitter/X') {
         console.log('🔄 Starting X OAuth flow...');
-        await XAuth.initiateLogin();  // This will handle the redirect
+        await XAuth.initiateLogin(userId);  // This will handle the redirect
+      } else if (platform === 'Tiktok') {
+        console.log('🔄 Starting TikTok OAuth flow...');
+        await TikTokAuth.initiateLogin(userId);  // This will handle the redirect
       }
     } catch (error) {
       console.error(`❌ Failed to connect to ${platform}:`, error);
@@ -102,15 +123,48 @@ const SnsLinkPage: React.FC = () => {
     }
   }, []);  
 
+  const updateLinkedAccounts = async (updatedLinks: typeof socialLinks) => {
+    const userId = localStorage.getItem('user_id');
+    if (!userId) return;
+
+    try {
+      await updateUserLinkedAccounts({
+        userId,
+        linkedAccounts: updatedLinks.map(link => ({
+          platform: link.platform,
+          username: link.username || '',
+          profilePictureUrl: link.profilePictureUrl || '',
+          isConnected: link.isConnected,
+          followersCount: link.followersCount || 0,
+          followsCount: link.followsCount || 0,
+          mediaCount: link.platform === 'Instagram' ? (link.mediaCount || 0) : undefined,
+          tweetCount: link.platform === 'Twitter/X' ? (link.tweetCount || 0) : undefined,
+          videoCount: link.platform === 'Tiktok' ? (link.videoCount || 0) : undefined,
+          lastUpdated: new Date()
+        }))
+      });
+    } catch (error) {
+      console.error('Failed to update linked accounts:', error);
+    }
+  };
+
   const handleOAuthCallback = async () => {
     const params = new URLSearchParams(window.location.search);
     const code = params.get('code');
     const error = params.get('error');
     const errorReason = params.get('error_reason');
     const state = params.get('state');
+    const platform = params.get('platform');
+    const userId = localStorage.getItem('user_id');
 
     // Clear URL parameters immediately
     window.history.replaceState({}, document.title, window.location.pathname);
+
+    if (!userId) {
+      console.error('No user ID found');
+      navigate('/login');
+      return;
+    }
 
     if (error || errorReason) {
       console.log('Auth was denied or failed:', error, errorReason);
@@ -120,85 +174,148 @@ const SnsLinkPage: React.FC = () => {
 
     if (code && !isProcessing) {
       setIsProcessing(true);
-      const lastPlatform = localStorage.getItem('lastAttemptedPlatform');
-      
       try {
-        if (lastPlatform === 'Instagram') {
-          const instagramData = await exchangeCodeForToken(code);
-          
-          // Handle Instagram data...
-          console.log('💾 Saving Instagram user ID to localStorage:', {
-            id: instagramData.id,
-            username: instagramData.username
-          });
-          localStorage.setItem('instagram_user_id', instagramData.id);
-          
-          const updatedLinks = socialLinks.map(link => 
-            link.platform === 'Instagram' 
-              ? { 
-                  ...link, 
-                  isConnected: true, 
-                  username: instagramData.username,
-                  profilePictureUrl: instagramData.profile_picture_url,
-                  followersCount: instagramData.followers_count,
-                  followsCount: instagramData.follows_count,
-                  mediaCount: instagramData.media_count
-                } 
+        const lastAttemptedPlatform = localStorage.getItem('lastAttemptedPlatform');
+
+        if (lastAttemptedPlatform === 'Instagram') {
+          const instagramResponse = await exchangeCodeForToken(code, userId);
+          const updatedLinks = socialLinks.map(link =>
+            link.platform === 'Instagram'
+              ? {
+                  ...link,
+                  isConnected: true,
+                  username: instagramResponse?.username || 'Instagram User',
+                  profilePictureUrl: instagramResponse?.profile_picture_url || '',
+                  followersCount: instagramResponse?.followers_count || 0,
+                  followsCount: instagramResponse?.follows_count || 0,
+                  mediaCount: instagramResponse?.media_count || 0
+                }
               : link
           );
           setSocialLinks(updatedLinks);
-          
-        } else if (lastPlatform === 'Twitter/X' && state) {
-          console.log('🔄 Processing X callback with code:', code);
-          const storedState = localStorage.getItem('x_auth_state');
-          
-          if (state !== storedState) {
-            throw new Error('Invalid state parameter');
-          }
-          
-          const xData = await XAuth.handleCallback(code, state);
-          console.log('✅ X auth successful:', xData);
-          
-          if (!('success' in xData) || !xData.success) {
-            throw new Error('success' in xData ? xData.error : 'Failed to authenticate with X');
-          }
-
-          const userData = xData.userData.data;  // Access the nested data property
+          await updateLinkedAccounts(updatedLinks);
+        } else if (lastAttemptedPlatform === 'Twitter/X' && state) {
+          const xResponse = await XAuth.handleCallback(code, state, userId);
+          const userData = xResponse?.userData || {};
+          const metrics = userData?.public_metrics || {};
           const updatedLinks = socialLinks.map(link =>
             link.platform === 'Twitter/X'
               ? {
                   ...link,
                   isConnected: true,
-                  username: userData.username,
-                  profilePictureUrl: userData.profile_image_url,
-                  followersCount: userData.public_metrics?.followers_count || 0,
-                  followsCount: userData.public_metrics?.following_count || 0,
-                  tweetCount: userData.public_metrics?.tweet_count || 0
+                  username: userData?.username || 'X User',
+                  profilePictureUrl: userData?.profile_image_url || '',
+                  followersCount: metrics?.followers_count || 0,
+                  followsCount: metrics?.following_count || 0,
+                  tweetCount: metrics?.tweet_count || 0
                 }
               : link
           );
           setSocialLinks(updatedLinks);
+          await updateLinkedAccounts(updatedLinks);
+        } else if (lastAttemptedPlatform === 'Tiktok' && state) {
+          const tiktokResponse = await TikTokAuth.handleCallback(code, state, userId);
+          const userData = tiktokResponse?.tokenData?.userData || {};
+          const stats = userData?.stats || {};
+          
+          const updatedLinks = socialLinks.map(link =>
+            link.platform === 'Tiktok'
+              ? {
+                  ...link,
+                  isConnected: true,
+                  username: userData?.display_name || 'TikTok User',
+                  profilePictureUrl: userData?.avatar_url || '',
+                  followersCount: stats?.follower_count || 0,
+                  followsCount: stats?.following_count || 0,
+                  videoCount: stats?.video_count || 0
+                }
+              : link
+          );
+          setSocialLinks(updatedLinks);
+          await updateLinkedAccounts(updatedLinks);
         }
       } catch (error) {
         console.error('Failed to process OAuth callback:', error);
       } finally {
         setIsProcessing(false);
         localStorage.removeItem('lastAttemptedPlatform');
-        localStorage.removeItem('x_auth_state');
       }
     }
   };
 
-  const handleDisconnect = (platform: string) => {
+  const handleDisconnect = async (platform: string) => {
     const updatedLinks = socialLinks.map(link =>
       link.platform === platform
-        ? { ...link, isConnected: false, username: '' }
+        ? {
+            ...link,
+            isConnected: false,
+            username: '',
+            profilePictureUrl: '',
+            followersCount: 0,
+            followsCount: 0,
+            mediaCount: 0,
+            tweetCount: 0,
+            videoCount: 0
+          }
         : link
     );
     setSocialLinks(updatedLinks);
+    await updateLinkedAccounts(updatedLinks);
   };
 
+  useEffect(() => {
+    updateLinkedAccounts(socialLinks);
+  }, []); // Run once when component mounts
+
   const activeLinks = socialLinks.filter(link => link.isConnected);
+
+  const renderSocialLink = (link: SocialLink) => {
+    return (
+      <div key={link.platform} className="social-link-card">
+        <div className="profile-header">
+          {link.profilePictureUrl && (
+            <img src={link.profilePictureUrl} alt={`${link.platform} profile`} className="profile-picture" />
+          )}
+          <div className="profile-info">
+            <h3>{link.username || link.platform}</h3>
+            {link.isVerified && <span className="verified-badge">✓</span>}
+            {link.bio && <p className="bio">{link.bio}</p>}
+          </div>
+        </div>
+        
+        {link.isConnected && (
+          <div className="stats-container">
+            <div className="stat">
+              <span className="stat-value">{link.followersCount?.toLocaleString()}</span>
+              <span className="stat-label">Followers</span>
+            </div>
+            <div className="stat">
+              <span className="stat-value">{link.followsCount?.toLocaleString()}</span>
+              <span className="stat-label">Following</span>
+            </div>
+            <div className="stat">
+              <span className="stat-value">{link.videoCount?.toLocaleString()}</span>
+              <span className="stat-label">Videos</span>
+            </div>
+            {link.likesCount !== undefined && (
+              <div className="stat">
+                <span className="stat-value">{link.likesCount.toLocaleString()}</span>
+                <span className="stat-label">Likes</span>
+              </div>
+            )}
+          </div>
+        )}
+        
+        <button
+          onClick={() => handleOAuthConnect(link.platform)}
+          className={`connect-button ${link.isConnected ? 'connected' : ''}`}
+          disabled={isProcessing}
+        >
+          {link.isConnected ? 'Connected' : 'Connect'}
+        </button>
+      </div>
+    );
+  };
 
   return (
     <PageContainer>
@@ -261,6 +378,22 @@ const SnsLinkPage: React.FC = () => {
                     <StatItem>
                       <StatValue>{formatCount(link.platform === 'Twitter/X' ? (link.tweetCount || 0) : (link.mediaCount || 0))}</StatValue>
                       <StatLabel>{link.platform === 'Twitter/X' ? '트윗' : '게시물'}</StatLabel>
+                    </StatItem>
+                    <StatItem>
+                      <StatValue>{formatCount(link.followersCount)}</StatValue>
+                      <StatLabel>팔로워</StatLabel>
+                    </StatItem>
+                    <StatItem>
+                      <StatValue>{formatCount(link.followsCount || 0)}</StatValue>
+                      <StatLabel>팔로잉</StatLabel>
+                    </StatItem>
+                  </PreviewStats>
+                )}
+                {link.platform === 'Tiktok' && link.followersCount !== undefined && (
+                  <PreviewStats>
+                    <StatItem>
+                      <StatValue>{formatCount(link.videoCount || 0)}</StatValue>
+                      <StatLabel>영상</StatLabel>
                     </StatItem>
                     <StatItem>
                       <StatValue>{formatCount(link.followersCount)}</StatValue>

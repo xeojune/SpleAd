@@ -40,12 +40,25 @@ export interface XAuthErrorResponse {
   error: string;
 }
 
-export type XAuthResponse = XAuthSuccessResponse | XAuthErrorResponse;
+export interface XAuthResponse {
+  success: boolean;
+  userData: {
+    id: string;
+    username: string;
+    name: string;
+    profile_image_url: string;
+    public_metrics: {
+      followers_count: number;
+      following_count: number;
+      tweet_count: number;
+    };
+  };
+}
 
 export class XAuth {
   private static state: string;
 
-  static async initiateLogin(): Promise<void> {
+  static async initiateLogin(userId: string): Promise<void> {
     console.log('🎯 XAuth.initiateLogin called');
     // Generate random state
     this.state = Math.random().toString(36).substring(2);
@@ -56,6 +69,7 @@ export class XAuth {
       const response = await axios.get<{ authUrl: string; state: string }>('http://localhost:3000/api/x/auth', {
         params: {
           state: this.state,
+          userId: userId,
         },
         withCredentials: true
       });
@@ -79,7 +93,7 @@ export class XAuth {
     }
   }
 
-  static async handleCallback(code: string, state: string): Promise<XAuthResponse> {
+  static async handleCallback(code: string, state: string, userId: string): Promise<XAuthResponse> {
     // Verify state matches
     const savedState = localStorage.getItem('x_auth_state');
     if (!savedState || state !== savedState) {
@@ -92,6 +106,7 @@ export class XAuth {
         params: {
           code,
           state,
+          userId,
         },
         withCredentials: true
       });

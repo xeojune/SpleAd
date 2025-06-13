@@ -5,16 +5,16 @@ const CLIENT_ID = '1257114546025522';
 const REDIRECT_URI = 'https://0005-220-76-70-1.ngrok-free.app/link';
 const API_URL = 'http://localhost:3000';
 
-interface InstagramTokenResponse {
-  access_token: string;
+export interface InstagramTokenResponse {
   id: string;
-  long_lived_token: string;
-  expires_in: number;
   username: string;
   profile_picture_url: string;
   followers_count: number;
   follows_count: number;
   media_count: number;
+  access_token: string;
+  long_lived_token: string;
+  expires_in: number;
 }
 
 interface InstagramUserResponse {
@@ -51,7 +51,9 @@ interface InstagramMediaResponse {
   };
 }
 
-export const getInstagramAuthUrl = () => {
+export const getInstagramAuthUrl = (userId: string): string => {
+  const state = Math.random().toString(36).substring(2);
+  localStorage.setItem('instagram_auth_state', state);
   const scopes = [
     'instagram_business_basic',
     'instagram_business_manage_messages',
@@ -66,7 +68,9 @@ export const getInstagramAuthUrl = () => {
     response_type: 'code',
     scope: scopes,
     enable_fb_login: '0',
-    force_authentication: '1'
+    force_authentication: '1',
+    state,
+    userId
   });
 
   const authUrl = `${INSTAGRAM_AUTH_URL}?${params.toString()}`;
@@ -74,10 +78,10 @@ export const getInstagramAuthUrl = () => {
   return authUrl;
 };
 
-export const exchangeCodeForToken = async (code: string): Promise<InstagramTokenResponse> => {
+export const exchangeCodeForToken = async (code: string, userId: string): Promise<InstagramTokenResponse> => {
   try {
     console.log('📤 Sending code to backend for token exchange:', code);
-    const response = await axios.post<InstagramTokenResponse>(`${API_URL}/instagram/callback`, { code });
+    const response = await axios.post<InstagramTokenResponse>(`${API_URL}/instagram/callback`, { code, userId });
     
     console.log('📥 Raw token response data:', {
       ...response.data,

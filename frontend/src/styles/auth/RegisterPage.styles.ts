@@ -74,3 +74,10 @@ export const ButtonGroup = styled.div`
     flex: 1;
   }
 `;
+
+export const ValidationMessage = styled.span<{ isError?: boolean }>`
+  font-size: 12px;
+  color: ${props => props.isError ? '#ff4d4f' : '#52c41a'};
+  margin-top: 4px;
+  display: block;
+`;

@@ -5,6 +5,8 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
 import { InstagramModule } from './instagram/instagram.module';
 import { XModule } from './X/x.module';
+import { TikTokModule } from './tiktok/tiktok.module';
+import { AuthModule } from './auth/auth.module';
 
 @Module({
   imports: [
@@ -36,6 +38,8 @@ import { XModule } from './X/x.module';
     }),
     InstagramModule,
     XModule,
+    TikTokModule,
+    AuthModule,
   ],
   controllers: [AppController],
   providers: [AppService],

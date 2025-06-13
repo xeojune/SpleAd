@@ -21,7 +21,8 @@ import {
 import spleadLogo from '../../assets/logo.png';
 import opendreamLogo from '../../assets/opendreamlogo.png';
 import googleIcon from '../../assets/google.png';
-
+import { authApi } from '../../apis/masterAuth';
+import axios from 'axios';
 
 const LoginPage: React.FC = () => {
   const navigate = useNavigate();
@@ -30,6 +31,7 @@ const LoginPage: React.FC = () => {
     password: '',
     rememberMe: false,
   });
+  const [error, setError] = useState<string>('');
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type, checked } = e.target;
@@ -37,21 +39,59 @@ const LoginPage: React.FC = () => {
       ...prev,
       [name]: type === 'checkbox' ? checked : value,
     }));
+    setError(''); // Clear error when user types
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError('');
     
     // Check if email and password are filled
     if (!formData.email || !formData.password) {
-      alert('Please fill in all fields');
+      setError('Please fill in all fields');
       return;
     }
 
-    // Show success message and navigate
-    alert('Successful login');
-    navigate('/link');
+    try {
+      const response = await authApi.login({
+        email: formData.email,
+        password: formData.password,
+      });
+      
+      // Store user ID and token
+      if (response.user?.id) {
+        localStorage.setItem('user_id', response.user.id);
+      }
+      
+      // If remember me is checked, save email
+      if (formData.rememberMe) {
+        localStorage.setItem('rememberedEmail', formData.email);
+      } else {
+        localStorage.removeItem('rememberedEmail');
+      }
+
+      // Navigate to dashboard after successful login
+      navigate('/link');
+    } catch (err) {
+      if (axios.isAxiosError(err)) {
+        setError(err.response?.data?.message || 'Login failed. Please try again.');
+      } else {
+        setError('An unexpected error occurred');
+      }
+    }
   };
+
+  // Load remembered email on component mount
+  React.useEffect(() => {
+    const rememberedEmail = localStorage.getItem('rememberedEmail');
+    if (rememberedEmail) {
+      setFormData(prev => ({
+        ...prev,
+        email: rememberedEmail,
+        rememberMe: true,
+      }));
+    }
+  }, []);
 
   return (
     <LoginContainer>
@@ -65,6 +105,8 @@ const LoginPage: React.FC = () => {
         </Logo>
         <LoginForm onSubmit={handleSubmit}>
           <Title>Login</Title>
+
+          {error && <div style={{ color: 'red', marginBottom: '1rem' }}>{error}</div>}
 
           <InputGroup>
             <Label htmlFor="email">이메일 또는 아이디</Label>
