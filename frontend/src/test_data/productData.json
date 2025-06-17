@@ -1,0 +1,72 @@
+{
+  "campaigns": [
+    {
+      "id": "1",
+      "image": "../assets/PostCard/image 8.png",
+      "title": "母の日限定セット",
+      "platforms": ["Instagram", "LIPS"],
+      "metrics": {
+        "current": "10",
+        "target": "30"
+      },
+      "brand": "アレンシア",
+      "description": "薬用 雪肌精 クリアウェルネス",
+      "recruitmentPeriod": "2025/04/21 ~ 2025/04/27",
+      "announcementDate": "2025/04/29",
+      "participantCount": "30",
+      "participationDetails": "商品レビューと使用感の投稿",
+      "postPeriod": "2025/05/07 ~ 2025/05/16"
+    },
+    {
+      "id": "2",
+      "image": "../assets/PostCard/image 9.png",
+      "title": "母の日限定セット",
+      "platforms": ["Instagram", "X"],
+      "metrics": {
+        "current": "5",
+        "target": "20"
+      },
+      "brand": "アレンシア",
+      "description": "SPF50+ PA++++で紫外線をしっかりカットしながら、肌をしっとりと保湿する日焼け止めクリーム。",
+      "recruitmentPeriod": "2025/04/28 ~ 2025/05/04",
+      "announcementDate": "2025/05/06",
+      "participantCount": "20",
+      "participationDetails": "日焼け止めの使用レビューと夏のお出かけフォト投稿",
+      "postPeriod": "2025/05/14 ~ 2025/05/23"
+    },
+    {
+      "id": "3",
+      "image": "../assets/PostCard/image.png",
+      "title": "ポケットチークパレット",
+      "platforms": ["Instagram", "LIPS", "LOFT"],
+      "metrics": {
+        "current": "15",
+        "target": "25"
+      },
+      "brand": "fwee フィー",
+      "description": "Pocket cheek Palette CP01 ピンク＆ソーダ",
+      "recruitmentPeriod": "2025/07/01 ~ 2025/07/07",
+      "announcementDate": "2025/05/09",
+      "participantCount": "25",
+      "participationDetails": "インスタグラムにてレビュー投稿",
+      "postPeriod": "2025/07/17 ~ 2025/07/26"
+    },
+    {
+      "id": "4",
+      "image": "../assets/PostCard/image 450.png",
+      "title": "オールインワンジェル",
+      "platforms": ["LIPS", "LOFT"],
+      "metrics": {
+        "current": "20",
+        "target": "40"
+      },
+      "brand": "fwee フィー",
+      "description": "極潤 パーフェクトジェル",
+      "recruitmentPeriod": "2025/06/14 ~ 2025/06/20",
+      "announcementDate": "2025/05/15",
+      "participantCount": "40",
+      "participationDetails": "2週間の使用結果レポートと写真投稿",
+      "postPeriod": "2025/06/23 ~ 2025/06/30"
+    }
+  ]
+}

@@ -42,15 +42,24 @@ export interface XAuthErrorResponse {
 
 export interface XAuthResponse {
   success: boolean;
+  tokenData: {
+    token_type: string;
+    expires_in: number;
+    access_token: string;
+    scope: string;
+    refresh_token: string;
+  };
   userData: {
-    id: string;
-    username: string;
-    name: string;
-    profile_image_url: string;
-    public_metrics: {
-      followers_count: number;
-      following_count: number;
-      tweet_count: number;
+    data: {
+      id: string;
+      name: string;
+      username: string;
+      profile_image_url: string;
+      public_metrics: {
+        followers_count: number;
+        following_count: number;
+        tweet_count: number;
+      };
     };
   };
 }

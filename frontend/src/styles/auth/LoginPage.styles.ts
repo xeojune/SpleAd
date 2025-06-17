@@ -18,8 +18,7 @@ export const LeftPanel = styled.div`
   overflow: hidden;
 
   img {
-    min-width: 50%;
-    min-height: 50%;
+    width: 50%;
     object-fit: cover;
     top: 0;
     left: 0;

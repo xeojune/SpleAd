@@ -115,6 +115,15 @@ export class AuthService {
     return null;
   }
 
+  async findById(userId: string) {
+    const user = await this.userModel.findById(userId).exec();
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+    const { password: _, ...result } = user.toJSON();
+    return result;
+  }
+
   async updateLinkedAccounts(updateDto: UpdateLinkedAccountsDto) {
     const { userId, linkedAccounts } = updateDto;
     

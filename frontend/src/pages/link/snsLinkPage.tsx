@@ -196,15 +196,15 @@ const SnsLinkPage: React.FC = () => {
           await updateLinkedAccounts(updatedLinks);
         } else if (lastAttemptedPlatform === 'Twitter/X' && state) {
           const xResponse = await XAuth.handleCallback(code, state, userId);
-          const userData = xResponse?.userData || {};
+          const userData = xResponse?.userData?.data || {};  // Access the nested data object
           const metrics = userData?.public_metrics || {};
           const updatedLinks = socialLinks.map(link =>
             link.platform === 'Twitter/X'
               ? {
                   ...link,
                   isConnected: true,
-                  username: userData?.username || 'X User',
-                  profilePictureUrl: userData?.profile_image_url || '',
+                  username: userData.username || 'X User',  // This will now correctly get "juneyoung_seo"
+                  profilePictureUrl: userData.profile_image_url || '',
                   followersCount: metrics?.followers_count || 0,
                   followsCount: metrics?.following_count || 0,
                   tweetCount: metrics?.tweet_count || 0
@@ -263,9 +263,6 @@ const SnsLinkPage: React.FC = () => {
     await updateLinkedAccounts(updatedLinks);
   };
 
-  useEffect(() => {
-    updateLinkedAccounts(socialLinks);
-  }, []); // Run once when component mounts
 
   const activeLinks = socialLinks.filter(link => link.isConnected);
 
@@ -348,8 +345,8 @@ const SnsLinkPage: React.FC = () => {
           ))}
         </SocialList>
         <ButtonGroup>
-          <SkipButton onClick={() => navigate('/media')}>건너뛰기</SkipButton>
-          <NextButton onClick={() => navigate('/media')}>다음</NextButton>
+          <SkipButton onClick={() => navigate('/dashboard')}>건너뛰기</SkipButton>
+          <NextButton onClick={() => navigate('/dashboard')}>다음</NextButton>
         </ButtonGroup>
       </LeftPanel>
       <RightPanel>
