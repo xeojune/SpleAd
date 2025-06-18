@@ -1,7 +1,8 @@
-import { Controller, Post, Body, HttpCode, HttpStatus, Res, Get, UseGuards, Patch, Param } from '@nestjs/common';
+import { Controller, Post, Body, HttpCode, HttpStatus, Res, Get, UseGuards, Patch, Param, Request } from '@nestjs/common';
 import { Response } from 'express';
 import { AuthService } from './auth.service';
 import { SocialAccount } from '../users/schema/user.schema';
+import { JwtAuthGuard } from './guards/jwt-auth.guard';
 
 interface SignupDto {
   email: string;
@@ -42,8 +43,9 @@ export class AuthController {
     // Set JWT token in HTTP-only cookie
     res.cookie('access_token', access_token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production', 
-      sameSite: 'strict',
+      secure: true,  // Always use secure for ngrok
+      sameSite: 'none',  // Required for cross-site cookies
+      path: '/',
       maxAge: 24 * 60 * 60 * 1000, // 1 day
     });
 
@@ -57,13 +59,13 @@ export class AuthController {
   }
 
   @Get('me')
-  // @UseGuards(JwtAuthGuard)
-  me() {
-    return { message: 'Current user info' };
+  @UseGuards(JwtAuthGuard)
+  async me(@Request() req) {
+    return this.authService.findById(req.user.id.toString());
   }
 
   @Patch('user/linked-accounts')
-  // @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard)
   async updateLinkedAccounts(@Body() updateDto: UpdateLinkedAccountsDto) {
     return this.authService.updateLinkedAccounts(updateDto);
   }

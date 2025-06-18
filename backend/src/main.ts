@@ -14,7 +14,8 @@ async function bootstrap() {
       'https://0005-220-76-70-1.ngrok-free.app',
     ],
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'Cookie', 'Accept'],
+    exposedHeaders: ['Set-Cookie'],
     credentials: true,
   });
 

@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router';
 import { getInstagramAuthUrl, exchangeCodeForToken} from '../../apis/instagramAuth';
 import { XAuth } from '../../apis/xAuth';
 import { TikTokAuth } from '../../apis/tiktokAuth';
-import { updateUserLinkedAccounts } from '../../apis/masterAuth';
+import { updateUserLinkedAccounts, authApi } from '../../apis/masterAuth';
 import CheckmarkIcon from '../../components/icons/CheckmarkIcon';
 import {
   PageContainer,
@@ -62,38 +62,66 @@ const formatCount = (count: number): string => {
 const SnsLinkPage: React.FC = () => {
   const navigate = useNavigate();
   const [isProcessing, setIsProcessing] = useState(false);
-  const [socialLinks, setSocialLinks] = useState<SocialLink[]>(() => {
-    // Try to load from localStorage first
-    const userId = localStorage.getItem('user_id');
-    if (!userId) {
-      navigate('/login');
-      return [];
-    }
-    const savedLinks = localStorage.getItem(`socialLinks_${userId}`);
-    return savedLinks ? JSON.parse(savedLinks) : [
-      { platform: 'Twitter/X', username: '', icon: twitterIcon, url: '', isConnected: false },
-      { platform: 'Instagram', username: '', icon: instagramIcon, url: '', isConnected: false },
-      { platform: 'Tiktok', username: '', icon: tiktokIcon, url: '', isConnected: false },
-    ];
-  });
+  const [socialLinks, setSocialLinks] = useState<SocialLink[]>([
+    { platform: 'Twitter/X', username: '', icon: twitterIcon, url: '', isConnected: false },
+    { platform: 'Instagram', username: '', icon: instagramIcon, url: '', isConnected: false },
+    { platform: 'Tiktok', username: '', icon: tiktokIcon, url: '', isConnected: false },
+  ]);
 
-  // Save to localStorage whenever socialLinks changes
+  // Load user data and linked accounts on mount
   useEffect(() => {
-    const userId = localStorage.getItem('user_id');
-    if (userId) {
-      localStorage.setItem(`socialLinks_${userId}`, JSON.stringify(socialLinks));
-    }
-  }, [socialLinks]);
+    const loadUserData = async () => {
+      try {
+        const user = await authApi.getCurrentUser();
+        const userId = user?._id || user?.id;
+        if (!userId) {
+          navigate('/login');
+          return;
+        }
+
+        // Map the linked accounts to our social links format
+        const updatedLinks = socialLinks.map(link => {
+          const linkedAccount = user.linkedAccounts?.find(
+            account => account.platform === link.platform
+          );
+
+          if (linkedAccount) {
+            return {
+              ...link,
+              isConnected: linkedAccount.isConnected,
+              username: linkedAccount.username,
+              profilePictureUrl: linkedAccount.profilePictureUrl,
+              followersCount: linkedAccount.followersCount,
+              followsCount: linkedAccount.followsCount,
+              mediaCount: linkedAccount.mediaCount,
+              tweetCount: linkedAccount.tweetCount,
+              videoCount: linkedAccount.videoCount,
+            };
+          }
+          return link;
+        });
+
+        setSocialLinks(updatedLinks);
+      } catch (error) {
+        console.error('Failed to load user data:', error);
+        navigate('/login');
+      }
+    };
+
+    loadUserData();
+  }, [navigate]);
 
   const handleOAuthConnect = async (platform: string) => {
     try {
       setIsProcessing(true);
-      const userId = localStorage.getItem('user_id');
+      const user = await authApi.getCurrentUser();
+      const userId = user?._id || user?.id;
       if (!userId) {
-        console.error('No user ID found');
+        console.error('No valid user ID found');
         navigate('/login');
         return;
       }
+      
       localStorage.setItem('lastAttemptedPlatform', platform);
       
       if (platform === 'Instagram') {
@@ -101,10 +129,10 @@ const SnsLinkPage: React.FC = () => {
         window.location.href = authUrl;
       } else if (platform === 'Twitter/X') {
         console.log('🔄 Starting X OAuth flow...');
-        await XAuth.initiateLogin(userId);  // This will handle the redirect
+        await XAuth.initiateLogin(userId);  
       } else if (platform === 'Tiktok') {
         console.log('🔄 Starting TikTok OAuth flow...');
-        await TikTokAuth.initiateLogin(userId);  // This will handle the redirect
+        await TikTokAuth.initiateLogin(userId);  
       }
     } catch (error) {
       console.error(`❌ Failed to connect to ${platform}:`, error);
@@ -124,25 +152,40 @@ const SnsLinkPage: React.FC = () => {
   }, []);  
 
   const updateLinkedAccounts = async (updatedLinks: typeof socialLinks) => {
-    const userId = localStorage.getItem('user_id');
-    if (!userId) return;
-
     try {
+      const user = await authApi.getCurrentUser();
+      const userId = user?._id || user?.id;
+      if (!userId) return;
+
       await updateUserLinkedAccounts({
         userId,
-        linkedAccounts: updatedLinks.map(link => ({
-          platform: link.platform,
-          username: link.username || '',
-          profilePictureUrl: link.profilePictureUrl || '',
-          isConnected: link.isConnected,
-          followersCount: link.followersCount || 0,
-          followsCount: link.followsCount || 0,
-          mediaCount: link.platform === 'Instagram' ? (link.mediaCount || 0) : undefined,
-          tweetCount: link.platform === 'Twitter/X' ? (link.tweetCount || 0) : undefined,
-          videoCount: link.platform === 'Tiktok' ? (link.videoCount || 0) : undefined,
-          lastUpdated: new Date()
-        }))
+        linkedAccounts: updatedLinks
+          .filter(link => link.isConnected)
+          .map(link => ({
+            platform: link.platform,
+            username: link.username,
+            profilePictureUrl: link.profilePictureUrl || '',
+            isConnected: link.isConnected,
+            followersCount: link.followersCount || 0,
+            followsCount: link.followsCount || 0,
+            mediaCount: link.mediaCount,
+            tweetCount: link.tweetCount,
+            videoCount: link.videoCount,
+            lastUpdated: new Date(),
+          }))
       });
+
+      // Refresh user data after update
+      const updatedUser = await authApi.getCurrentUser();
+      if (updatedUser?.linkedAccounts) {
+        const newLinks = socialLinks.map(link => {
+          const updatedAccount = updatedUser.linkedAccounts.find(
+            account => account.platform === link.platform
+          );
+          return updatedAccount ? { ...link, ...updatedAccount } : link;
+        });
+        setSocialLinks(newLinks);
+      }
     } catch (error) {
       console.error('Failed to update linked accounts:', error);
     }
@@ -155,16 +198,18 @@ const SnsLinkPage: React.FC = () => {
     const errorReason = params.get('error_reason');
     const state = params.get('state');
     const platform = params.get('platform');
-    const userId = localStorage.getItem('user_id');
-
-    // Clear URL parameters immediately
-    window.history.replaceState({}, document.title, window.location.pathname);
-
+    
+    // Get user data first
+    const user = await authApi.getCurrentUser();
+    const userId = user?._id || user?.id;
     if (!userId) {
       console.error('No user ID found');
       navigate('/login');
       return;
     }
+
+    // Clear URL parameters immediately
+    window.history.replaceState({}, document.title, window.location.pathname);
 
     if (error || errorReason) {
       console.log('Auth was denied or failed:', error, errorReason);
@@ -196,14 +241,14 @@ const SnsLinkPage: React.FC = () => {
           await updateLinkedAccounts(updatedLinks);
         } else if (lastAttemptedPlatform === 'Twitter/X' && state) {
           const xResponse = await XAuth.handleCallback(code, state, userId);
-          const userData = xResponse?.userData?.data || {};  // Access the nested data object
+          const userData = xResponse?.userData?.data || {};  
           const metrics = userData?.public_metrics || {};
           const updatedLinks = socialLinks.map(link =>
             link.platform === 'Twitter/X'
               ? {
                   ...link,
                   isConnected: true,
-                  username: userData.username || 'X User',  // This will now correctly get "juneyoung_seo"
+                  username: userData.username || 'X User',  
                   profilePictureUrl: userData.profile_image_url || '',
                   followersCount: metrics?.followers_count || 0,
                   followsCount: metrics?.following_count || 0,

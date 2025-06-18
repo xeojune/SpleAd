@@ -43,11 +43,10 @@ const ProductList = styled.div`
 `;
 
 const ProductWrapper = styled.div`
-  flex: 0 0 calc(50% - 0.5rem); /* Take up half the space minus half the gap */
   max-width: calc(50% - 0.5rem);
   
   &:not(:last-child) {
-    margin-right: 1rem;
+    margin-right: 1.5rem;
   }
 `;
 

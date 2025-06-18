@@ -14,16 +14,11 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        const token = localStorage.getItem('token');
-        if (!token) {
-          setIsAuthenticated(false);
-          setIsLoading(false);
-          return;
-        }
-        
-        const authenticated = await authApi.isAuthenticated();
+        const { authenticated, user } = await authApi.isAuthenticated();
+        console.log('Auth check result:', { authenticated, user }); // Debug log
         setIsAuthenticated(authenticated);
       } catch (error) {
+        console.error('Auth check failed:', error); // Debug log
         setIsAuthenticated(false);
       } finally {
         setIsLoading(false);
@@ -31,17 +26,18 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
     };
     
     checkAuth();
-  }, []);
+  }, [location.pathname]); // Re-run when path changes
 
   if (isLoading) {
-    return <div>Loading...</div>; // You can replace this with a proper loading component
+    return <div>Loading...</div>;
   }
 
   if (!isAuthenticated) {
-    // Redirect to login page but save the attempted URL
+    console.log('Not authenticated, redirecting to login'); // Debug log
     return <Navigate to="/login" state={{ from: location.pathname }} replace />;
   }
 
+  console.log('Authenticated, rendering children'); // Debug log
   return <>{children}</>;
 };
 

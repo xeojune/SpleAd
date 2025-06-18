@@ -8,18 +8,12 @@ const api = axios.create({
   withCredentials: true, // Important for cookies
 });
 
-// Add request interceptor to include token
-api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('token');
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-  return config;
-});
+// No need for token interceptor since we're using cookies
 
 interface LoginResponse {
   user: {
-    id: string;
+    id?: string;  // For backward compatibility
+    _id: string;  // From MongoDB
     email: string;
     name: string | null;
     linkedAccounts: Array<{
@@ -59,40 +53,80 @@ interface AuthApi {
   login(data: LoginData): Promise<LoginResponse>;
   signup(data: SignupData): Promise<Omit<LoginResponse['user'], 'id'>>;
   logout(): Promise<void>;
-  isAuthenticated(): Promise<boolean>;
+  isAuthenticated(): Promise<{ authenticated: boolean; user?: LoginResponse['user'] }>;
+  getCurrentUser(): Promise<LoginResponse['user']>;
 }
 
 export const authApi: AuthApi = {
   async login(data: LoginData): Promise<LoginResponse> {
-    const response = await api.post<LoginResponse>('/auth/login', data);
-    if (response.data?.user) {
-      // Store the token
-      localStorage.setItem('token', response.data.token);
+    try {
+      const response = await api.post<LoginResponse>('/auth/login', data);
+      if (response.data?.user) {
+        // Don't store token in localStorage since we're using HTTP-only cookies
+        localStorage.setItem('user', JSON.stringify(response.data.user));
+      }
+      console.log('login response:', response.data); // Debug log
+      return response.data;
+    } catch (error) {
+      console.error('login failed:', error); // Debug log
+      throw error;
     }
-    return response.data;
   },
 
   async signup(data: SignupData): Promise<Omit<LoginResponse['user'], 'id'>> {
-    const response = await api.post('/auth/signup', data);
-    return response.data;
+    try {
+      const response = await api.post('/auth/signup', data);
+      console.log('signup response:', response.data); // Debug log
+      return response.data;
+    } catch (error) {
+      console.error('signup failed:', error); // Debug log
+      throw error;
+    }
   },
 
   async logout(): Promise<void> {
-    await api.post('/auth/logout');
-    localStorage.removeItem('token');
+    try {
+      await api.post('/auth/logout');
+      // Don't need to remove token from localStorage
+      localStorage.removeItem('user');
+      localStorage.removeItem('user_id');
+      console.log('logout successful'); // Debug log
+    } catch (error) {
+      console.error('logout failed:', error); // Debug log
+      throw error;
+    }
   },
 
-  async isAuthenticated(): Promise<boolean> {
+  async isAuthenticated(): Promise<{ authenticated: boolean; user?: LoginResponse['user'] }> {
     try {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        return false;
-      }
-      const response = await api.get('/auth/me');
-      return !!response.data;
+      const user = await this.getCurrentUser();
+      console.log('isAuthenticated check - user:', user);
+      return {
+        authenticated: !!(user?._id || user?.id), // Check both _id and id
+        user
+      };
     } catch (error) {
-      localStorage.removeItem('token'); // Clear invalid token
-      return false;
+      console.error('isAuthenticated check failed:', error);
+      return { authenticated: false };
+    }
+  },
+
+  async getCurrentUser(): Promise<LoginResponse['user']> {
+    try {
+      const response = await api.get<LoginResponse['user']>('/auth/me');
+      console.log('getCurrentUser response:', response.data);
+      
+      // Transform the response to ensure id is present
+      const userData = {
+        ...response.data,
+        id: response.data._id, // Add id field based on _id
+      };
+      
+      localStorage.setItem('user', JSON.stringify(userData));
+      return userData;
+    } catch (error) {
+      console.error('getCurrentUser failed:', error);
+      throw error;
     }
   }
 };
@@ -117,14 +151,12 @@ export interface UpdateUserLinkedAccountsRequest {
 
 export const updateUserLinkedAccounts = async (data: UpdateUserLinkedAccountsRequest): Promise<void> => {
   try {
-    await axios.patch(`${API_URL}/auth/user/linked-accounts`, data, {
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      withCredentials: true,
-    });
+    await api.patch('/auth/user/linked-accounts', data);
+    // Refresh user data after updating linked accounts
+    await authApi.getCurrentUser();
+    console.log('updateUserLinkedAccounts successful'); // Debug log
   } catch (error) {
-    console.error('Failed to update user linked accounts:', error);
+    console.error('Failed to update user linked accounts:', error); // Debug log
     throw error;
   }
 };
