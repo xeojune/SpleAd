@@ -16,6 +16,7 @@ interface LoginResponse {
     _id: string;  // From MongoDB
     email: string;
     name: string | null;
+    hasCompletedSnsSetup: boolean;
     linkedAccounts: Array<{
       platform: string;
       username: string;
@@ -55,6 +56,7 @@ interface AuthApi {
   logout(): Promise<void>;
   isAuthenticated(): Promise<{ authenticated: boolean; user?: LoginResponse['user'] }>;
   getCurrentUser(): Promise<LoginResponse['user']>;
+  completeSnsSetup(): Promise<{ success: boolean; hasCompletedSnsSetup: boolean }>;
 }
 
 export const authApi: AuthApi = {
@@ -126,6 +128,16 @@ export const authApi: AuthApi = {
       return userData;
     } catch (error) {
       console.error('getCurrentUser failed:', error);
+      throw error;
+    }
+  },
+
+  async completeSnsSetup(): Promise<{ success: boolean; hasCompletedSnsSetup: boolean }> {
+    try {
+      const response = await api.post<{ success: boolean; hasCompletedSnsSetup: boolean }>('/auth/complete-sns-setup');
+      return response.data;
+    } catch (error) {
+      console.error('completeSnsSetup failed:', error);
       throw error;
     }
   }

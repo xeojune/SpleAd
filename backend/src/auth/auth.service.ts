@@ -127,9 +127,48 @@ export class AuthService {
   async updateLinkedAccounts(updateDto: UpdateLinkedAccountsDto) {
     const { userId, linkedAccounts } = updateDto;
     
+    // Get the current user first
+    const currentUser = await this.userModel.findById(userId);
+    if (!currentUser) {
+      throw new NotFoundException('User not found');
+    }
+
+    // For each new linked account, update or add it to the existing accounts
+    const updatedAccounts = [...currentUser.linkedAccounts];
+    for (const newAccount of linkedAccounts) {
+      const existingIndex = updatedAccounts.findIndex(
+        account => account.platform === newAccount.platform
+      );
+      
+      if (existingIndex >= 0) {
+        // Update existing account
+        updatedAccounts[existingIndex] = newAccount;
+      } else {
+        // Add new account
+        updatedAccounts.push(newAccount);
+      }
+    }
+    
     const updatedUser = await this.userModel.findByIdAndUpdate(
       userId,
-      { linkedAccounts },
+      { linkedAccounts: updatedAccounts },
+      { new: true }
+    );
+
+    if (!updatedUser) {
+      throw new NotFoundException('Failed to update user linked accounts');
+    }
+
+    return {
+      success: true,
+      linkedAccounts: updatedUser.linkedAccounts
+    };
+  }
+
+  async completeSnsSetup(userId: string) {
+    const updatedUser = await this.userModel.findByIdAndUpdate(
+      userId,
+      { hasCompletedSnsSetup: true },
       { new: true }
     );
 
@@ -139,7 +178,7 @@ export class AuthService {
 
     return {
       success: true,
-      linkedAccounts: updatedUser.linkedAccounts
+      hasCompletedSnsSetup: updatedUser.hasCompletedSnsSetup
     };
   }
 }

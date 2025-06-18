@@ -42,6 +42,9 @@ export class User {
   @Prop({ required: true })
   accountNumber: string;
 
+  @Prop({ type: Boolean, default: false })
+  hasCompletedSnsSetup: boolean;
+
   @Prop({ type: [{ 
     platform: String,
     username: String,

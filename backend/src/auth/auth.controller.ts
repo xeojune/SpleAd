@@ -69,4 +69,10 @@ export class AuthController {
   async updateLinkedAccounts(@Body() updateDto: UpdateLinkedAccountsDto) {
     return this.authService.updateLinkedAccounts(updateDto);
   }
+
+  @Post('complete-sns-setup')
+  @UseGuards(JwtAuthGuard)
+  async completeSnsSetup(@Request() req) {
+    return this.authService.completeSnsSetup(req.user.id.toString());
+  }
 }
