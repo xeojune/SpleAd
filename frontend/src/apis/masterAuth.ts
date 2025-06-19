@@ -16,6 +16,13 @@ interface LoginResponse {
     _id: string;  // From MongoDB
     email: string;
     name: string | null;
+    phoneNumber?: string;  // Added phone number as optional
+    lineId?: string;  // to be added
+    recipientName?: string; //to be added
+    recipientNameKana?: string; //too be added
+    recipientPhoneNumber?: string; //to be added
+    postCode?: string;  // Added postcode field
+    address?: string;   // Added address field
     hasCompletedSnsSetup: boolean;
     linkedAccounts: Array<{
       platform: string;

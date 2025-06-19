@@ -16,6 +16,10 @@ const ButtonPanel: React.FC = () => {
   const isSearch = isActive('/dashboard/search');
   const isProfile = isActive('/dashboard/profile');
 
+  const handleProfileClick = () => {
+    navigate('/profile');
+  };
+
   return (
     <ButtonPanelContainer>
       <NavButton active={isDashboard} onClick={() => navigate('/dashboard')} aria-label="Home">
@@ -30,7 +34,7 @@ const ButtonPanel: React.FC = () => {
         <SearchIcon width="2.1875rem" height="2.1875rem" active={isSearch} />
         <p>検索</p>
       </NavButton>
-      <NavButton active={isProfile} onClick={() => navigate('/dashboard/profile')} aria-label="Profile">
+      <NavButton active={isProfile} onClick={handleProfileClick} aria-label="Profile">
         <ProfileIcon width="2.1875rem" height="2.1875rem" active={isProfile} />
         <p>プロフィール</p>
       </NavButton>

@@ -12,6 +12,10 @@ import MediaPage from './pages/media/mediaPage';
 import HomePage from './pages/home/homePage';
 import CampaignPage from './pages/campaign/campaignPage';
 import DescriptionPage from './pages/description/DescriptionPage';
+import ProfilePage from './pages/profile/ProfilePage';
+import MyAccountPage from './pages/profile/MyAccountPage';
+import EditAccountPage from './pages/profile/EditAccountPage';
+import EditAddressPage from './pages/profile/EditAddressPage';
 
 const App: React.FC = () => {
   return (
@@ -54,6 +58,34 @@ const App: React.FC = () => {
             <ProtectedRoute>
               <DashboardPage>
                 <DescriptionPage />
+              </DashboardPage>
+            </ProtectedRoute>
+          } />
+          <Route path="/profile" element={
+            <ProtectedRoute>
+              <DashboardPage>
+                <ProfilePage />
+              </DashboardPage>
+            </ProtectedRoute>
+          } />
+          <Route path="/profile/my-account" element={
+            <ProtectedRoute>
+              <DashboardPage>
+                <MyAccountPage />
+              </DashboardPage>
+            </ProtectedRoute>
+          } />
+          <Route path="/profile/my-account/edit-account" element={
+            <ProtectedRoute>
+              <DashboardPage>
+                <EditAccountPage />
+              </DashboardPage>
+            </ProtectedRoute>
+          } />
+          <Route path="/profile/my-account/edit-address" element={
+            <ProtectedRoute>
+              <DashboardPage>
+                <EditAddressPage />
               </DashboardPage>
             </ProtectedRoute>
           } />
