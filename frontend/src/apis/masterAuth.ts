@@ -64,6 +64,7 @@ interface AuthApi {
   isAuthenticated(): Promise<{ authenticated: boolean; user?: LoginResponse['user'] }>;
   getCurrentUser(): Promise<LoginResponse['user']>;
   completeSnsSetup(): Promise<{ success: boolean; hasCompletedSnsSetup: boolean }>;
+  deleteAccount(): Promise<void>;
 }
 
 export const authApi: AuthApi = {
@@ -145,6 +146,17 @@ export const authApi: AuthApi = {
       return response.data;
     } catch (error) {
       console.error('completeSnsSetup failed:', error);
+      throw error;
+    }
+  },
+
+  async deleteAccount(): Promise<void> {
+    try {
+      await api.delete('/auth/user');
+      localStorage.clear();
+      console.log('Account deletion successful');
+    } catch (error) {
+      console.error('Account deletion failed:', error);
       throw error;
     }
   }

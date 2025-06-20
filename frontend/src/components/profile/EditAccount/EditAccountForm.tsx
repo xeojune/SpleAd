@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router';
-import { IoIosArrowBack } from 'react-icons/io';
 import { authApi } from '../../../apis/masterAuth';
 import {
   FormContainer,

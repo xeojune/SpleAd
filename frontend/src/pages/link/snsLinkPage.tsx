@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router';
 import { getInstagramAuthUrl, exchangeCodeForToken} from '../../apis/instagramAuth';
 import { XAuth } from '../../apis/xAuth';
@@ -69,6 +69,164 @@ const SnsLinkPage: React.FC = () => {
     { platform: 'Tiktok', username: '', icon: tiktokIcon, url: '', isConnected: false },
   ]);
 
+  const updateLinkedAccounts = useCallback(async (updatedLinks: typeof socialLinks) => {
+    try {
+      const user = await authApi.getCurrentUser();
+      const userId = user?._id || user?.id;
+      if (!userId) {
+        console.error('No user ID found');
+        navigate('/login');
+        return;
+      }
+
+      await updateUserLinkedAccounts({
+        userId,
+        linkedAccounts: updatedLinks
+          .filter(link => link.isConnected)
+          .map(link => ({
+            platform: link.platform,
+            username: link.username,
+            profilePictureUrl: link.profilePictureUrl || '',
+            isConnected: link.isConnected,
+            followersCount: link.followersCount || 0,
+            followsCount: link.followsCount || 0,
+            mediaCount: link.mediaCount,
+            tweetCount: link.tweetCount,
+            videoCount: link.videoCount,
+            lastUpdated: new Date(),
+          }))
+      });
+
+      // Refresh user data after update
+      const updatedUser = await authApi.getCurrentUser();
+      if (updatedUser?.linkedAccounts) {
+        const newLinks = socialLinks.map(link => {
+          const updatedAccount = updatedUser.linkedAccounts.find(
+            account => account.platform === link.platform
+          );
+          return updatedAccount ? { ...link, ...updatedAccount } : link;
+        });
+        setSocialLinks(newLinks);
+      }
+    } catch (error) {
+      console.error('Failed to update linked accounts:', error);
+    }
+  }, [navigate]);
+
+  const handleOAuthCallback = useCallback(async () => {
+    if (isProcessing) {
+      return;
+    }
+    
+    setIsProcessing(true);
+    
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const code = params.get('code');
+      const error = params.get('error');
+      const errorReason = params.get('error_reason');
+      const state = params.get('state');
+      
+      // Clear URL parameters immediately
+      window.history.replaceState({}, document.title, window.location.pathname);
+      
+      if (!code) {
+        console.error('No code parameter found');
+        setIsProcessing(false);
+        return;
+      }
+
+      // Get user data first
+      const user = await authApi.getCurrentUser();
+      const userId = user?._id || user?.id;
+      if (!userId) {
+        console.error('No user ID found');
+        navigate('/login');
+        return;
+      }
+
+      if (error || errorReason) {
+        console.log('Auth was denied or failed:', error, errorReason);
+        setIsProcessing(false);
+        return;
+      }
+
+      const lastAttemptedPlatform = localStorage.getItem('lastAttemptedPlatform');
+      if (!lastAttemptedPlatform) {
+        setIsProcessing(false);
+        return;
+      }
+
+      try {
+        if (lastAttemptedPlatform === 'Instagram') {
+          const instagramResponse = await exchangeCodeForToken(code, userId);
+          const updatedLinks = socialLinks.map(link =>
+            link.platform === 'Instagram'
+              ? {
+                  ...link,
+                  isConnected: true,
+                  username: instagramResponse?.username || 'Instagram User',
+                  profilePictureUrl: instagramResponse?.profile_picture_url || '',
+                  followersCount: instagramResponse?.followers_count || 0,
+                  followsCount: instagramResponse?.follows_count || 0,
+                  mediaCount: instagramResponse?.media_count || 0
+                }
+              : link
+          );
+          setSocialLinks(updatedLinks);
+          await updateLinkedAccounts(updatedLinks);
+        } else if (lastAttemptedPlatform === 'Twitter/X' && state) {
+          const xResponse = await XAuth.handleCallback(code, state, userId);
+          const userData = xResponse?.userData?.data || {};  
+          const metrics = userData?.public_metrics || {};
+          const updatedLinks = socialLinks.map(link =>
+            link.platform === 'Twitter/X'
+              ? {
+                  ...link,
+                  isConnected: true,
+                  username: userData.username || 'X User',  
+                  profilePictureUrl: userData.profile_image_url || '',
+                  followersCount: metrics?.followers_count || 0,
+                  followsCount: metrics?.following_count || 0,
+                  tweetCount: metrics?.tweet_count || 0
+                }
+              : link
+          );
+          setSocialLinks(updatedLinks);
+          await updateLinkedAccounts(updatedLinks);
+        } else if (lastAttemptedPlatform === 'Tiktok' && state) {
+          const tiktokResponse = await TikTokAuth.handleCallback(code, state, userId);
+          const userData = tiktokResponse?.tokenData?.userData || {};
+          const stats = userData?.stats || {};
+          
+          const updatedLinks = socialLinks.map(link =>
+            link.platform === 'Tiktok'
+              ? {
+                  ...link,
+                  isConnected: true,
+                  username: userData?.display_name || 'TikTok User',
+                  profilePictureUrl: userData?.avatar_url || '',
+                  followersCount: stats?.follower_count || 0,
+                  followsCount: stats?.following_count || 0,
+                  videoCount: stats?.video_count || 0
+                }
+              : link
+          );
+          setSocialLinks(updatedLinks);
+          await updateLinkedAccounts(updatedLinks);
+        }
+      } catch (error) {
+        console.error('Failed to process OAuth callback:', error);
+      } finally {
+        setIsProcessing(false);
+        localStorage.removeItem('lastAttemptedPlatform');
+      }
+    } catch (error) {
+      console.error('Failed to process OAuth callback:', error);
+      setIsProcessing(false);
+    }
+  }, [isProcessing, navigate, socialLinks, updateLinkedAccounts]);
+
   useEffect(() => {
     const checkUserSetup = async () => {
       try {
@@ -116,7 +274,15 @@ const SnsLinkPage: React.FC = () => {
       }
     };
 
-    checkUserSetup();
+    // Check for OAuth callback
+    const params = new URLSearchParams(window.location.search);
+    const code = params.get('code');
+    
+    if (code) {
+      handleOAuthCallback();
+    } else {
+      checkUserSetup();
+    }
   }, [navigate]);
 
   // Don't render anything while checking user status
@@ -150,165 +316,6 @@ const SnsLinkPage: React.FC = () => {
     } catch (error) {
       console.error(`❌ Failed to connect to ${platform}:`, error);
       setIsProcessing(false);
-    }
-  };
-
-  useEffect(() => {
-    // Check if this is a callback from OAuth
-    const params = new URLSearchParams(window.location.search);
-    const code = params.get('code');
-    const state = params.get('state');
-    
-    if (code) {
-      handleOAuthCallback();
-    }
-  }, []);  
-
-  const updateLinkedAccounts = async (updatedLinks: typeof socialLinks) => {
-    try {
-      const user = await authApi.getCurrentUser();
-      const userId = user?._id || user?.id;
-      if (!userId) return;
-
-      await updateUserLinkedAccounts({
-        userId,
-        linkedAccounts: updatedLinks
-          .filter(link => link.isConnected)
-          .map(link => ({
-            platform: link.platform,
-            username: link.username,
-            profilePictureUrl: link.profilePictureUrl || '',
-            isConnected: link.isConnected,
-            followersCount: link.followersCount || 0,
-            followsCount: link.followsCount || 0,
-            mediaCount: link.mediaCount,
-            tweetCount: link.tweetCount,
-            videoCount: link.videoCount,
-            lastUpdated: new Date(),
-          }))
-      });
-
-      // Refresh user data after update
-      const updatedUser = await authApi.getCurrentUser();
-      if (updatedUser?.linkedAccounts) {
-        const newLinks = socialLinks.map(link => {
-          const updatedAccount = updatedUser.linkedAccounts.find(
-            account => account.platform === link.platform
-          );
-          return updatedAccount ? { ...link, ...updatedAccount } : link;
-        });
-        setSocialLinks(newLinks);
-      }
-    } catch (error) {
-      console.error('Failed to update linked accounts:', error);
-    }
-  };
-
-  const handleOAuthCallback = async () => {
-    // Prevent multiple executions
-    if (isProcessing) {
-      return;
-    }
-    
-    setIsProcessing(true);
-    
-    try {
-      const params = new URLSearchParams(window.location.search);
-      const code = params.get('code');
-      const error = params.get('error');
-      const errorReason = params.get('error_reason');
-      const state = params.get('state');
-      const platform = params.get('platform');
-      
-      // Clear URL parameters immediately
-      window.history.replaceState({}, document.title, window.location.pathname);
-      
-      // Get user data first
-      const user = await authApi.getCurrentUser();
-      const userId = user?._id || user?.id;
-      if (!userId) {
-        console.error('No user ID found');
-        navigate('/login');
-        return;
-      }
-
-      if (error || errorReason) {
-        console.log('Auth was denied or failed:', error, errorReason);
-        setIsProcessing(false);
-        return;
-      }
-
-      if (code && !isProcessing) {
-        setIsProcessing(true);
-        try {
-          const lastAttemptedPlatform = localStorage.getItem('lastAttemptedPlatform');
-
-          if (lastAttemptedPlatform === 'Instagram') {
-            const instagramResponse = await exchangeCodeForToken(code, userId);
-            const updatedLinks = socialLinks.map(link =>
-              link.platform === 'Instagram'
-                ? {
-                    ...link,
-                    isConnected: true,
-                    username: instagramResponse?.username || 'Instagram User',
-                    profilePictureUrl: instagramResponse?.profile_picture_url || '',
-                    followersCount: instagramResponse?.followers_count || 0,
-                    followsCount: instagramResponse?.follows_count || 0,
-                    mediaCount: instagramResponse?.media_count || 0
-                  }
-                : link
-            );
-            setSocialLinks(updatedLinks);
-            await updateLinkedAccounts(updatedLinks);
-          } else if (lastAttemptedPlatform === 'Twitter/X' && state) {
-            const xResponse = await XAuth.handleCallback(code, state, userId);
-            const userData = xResponse?.userData?.data || {};  
-            const metrics = userData?.public_metrics || {};
-            const updatedLinks = socialLinks.map(link =>
-              link.platform === 'Twitter/X'
-                ? {
-                    ...link,
-                    isConnected: true,
-                    username: userData.username || 'X User',  
-                    profilePictureUrl: userData.profile_image_url || '',
-                    followersCount: metrics?.followers_count || 0,
-                    followsCount: metrics?.following_count || 0,
-                    tweetCount: metrics?.tweet_count || 0
-                  }
-                : link
-            );
-            setSocialLinks(updatedLinks);
-            await updateLinkedAccounts(updatedLinks);
-          } else if (lastAttemptedPlatform === 'Tiktok' && state) {
-            const tiktokResponse = await TikTokAuth.handleCallback(code, state, userId);
-            const userData = tiktokResponse?.tokenData?.userData || {};
-            const stats = userData?.stats || {};
-            
-            const updatedLinks = socialLinks.map(link =>
-              link.platform === 'Tiktok'
-                ? {
-                    ...link,
-                    isConnected: true,
-                    username: userData?.display_name || 'TikTok User',
-                    profilePictureUrl: userData?.avatar_url || '',
-                    followersCount: stats?.follower_count || 0,
-                    followsCount: stats?.following_count || 0,
-                    videoCount: stats?.video_count || 0
-                  }
-                : link
-            );
-            setSocialLinks(updatedLinks);
-            await updateLinkedAccounts(updatedLinks);
-          }
-        } catch (error) {
-          console.error('Failed to process OAuth callback:', error);
-        } finally {
-          setIsProcessing(false);
-          localStorage.removeItem('lastAttemptedPlatform');
-        }
-      }
-    } catch (error) {
-      console.error('Failed to process OAuth callback:', error);
     }
   };
 

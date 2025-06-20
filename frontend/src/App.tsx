@@ -16,6 +16,10 @@ import ProfilePage from './pages/profile/ProfilePage';
 import MyAccountPage from './pages/profile/MyAccountPage';
 import EditAccountPage from './pages/profile/EditAccountPage';
 import EditAddressPage from './pages/profile/EditAddressPage';
+import MyBankPage from './pages/profile/MyBankPage';
+import EditBankPage from './pages/profile/EditBankPage';
+import SnsPage from './pages/profile/SnsPage';
+import EditPasswordPage from './pages/profile/EditPasswordPage';
 
 const App: React.FC = () => {
   return (
@@ -86,6 +90,34 @@ const App: React.FC = () => {
             <ProtectedRoute>
               <DashboardPage>
                 <EditAddressPage />
+              </DashboardPage>
+            </ProtectedRoute>
+          } />
+          <Route path="/profile/my-bank" element={
+            <ProtectedRoute>
+              <DashboardPage>
+                <MyBankPage />
+              </DashboardPage>
+            </ProtectedRoute>
+          } />
+          <Route path="/profile/edit-bank" element={
+            <ProtectedRoute>
+              <DashboardPage>
+                <EditBankPage />
+              </DashboardPage>
+            </ProtectedRoute>
+          } />
+          <Route path="/profile/edit-password" element={
+            <ProtectedRoute>
+              <DashboardPage>
+                <EditPasswordPage />
+              </DashboardPage>
+            </ProtectedRoute>
+          } />
+          <Route path="/profile/sns" element={
+            <ProtectedRoute>
+              <DashboardPage>
+                <SnsPage />
               </DashboardPage>
             </ProtectedRoute>
           } />

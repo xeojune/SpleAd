@@ -20,7 +20,7 @@ const AccountSetting: React.FC = () => {
     },
     {
       text: '振込先口座の管理',
-      path: '/profile/bank'
+      path: '/profile/my-bank'
     },
     {
       text: 'SNSアカウント連携',
