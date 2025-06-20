@@ -181,4 +181,17 @@ export class AuthService {
       hasCompletedSnsSetup: updatedUser.hasCompletedSnsSetup
     };
   }
+
+  async deleteAccount(userId: string) {
+    const deletedUser = await this.userModel.findByIdAndDelete(userId);
+    
+    if (!deletedUser) {
+      throw new NotFoundException('User not found');
+    }
+
+    return {
+      success: true,
+      message: 'Account deleted successfully'
+    };
+  }
 }

@@ -1,4 +1,4 @@
-import { Controller, Post, Body, HttpCode, HttpStatus, Res, Get, UseGuards, Patch, Param, Request } from '@nestjs/common';
+import { Controller, Post, Body, HttpCode, HttpStatus, Res, Get, UseGuards, Patch, Param, Request, Delete } from '@nestjs/common';
 import { Response } from 'express';
 import { AuthService } from './auth.service';
 import { SocialAccount } from '../users/schema/user.schema';
@@ -74,5 +74,11 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   async completeSnsSetup(@Request() req) {
     return this.authService.completeSnsSetup(req.user.id.toString());
+  }
+
+  @Delete('user')
+  @UseGuards(JwtAuthGuard)
+  async deleteAccount(@Request() req) {
+    return this.authService.deleteAccount(req.user.id.toString());
   }
 }
