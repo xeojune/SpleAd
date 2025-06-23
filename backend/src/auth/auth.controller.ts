@@ -1,7 +1,7 @@
-import { Controller, Post, Body, HttpCode, HttpStatus, Res, Get, UseGuards, Patch, Param, Request, Delete } from '@nestjs/common';
+import { Controller, Post, Body, HttpCode, HttpStatus, Res, Get, UseGuards, Patch, Param, Request, Delete, Query } from '@nestjs/common';
 import { Response } from 'express';
 import { AuthService } from './auth.service';
-import { SocialAccount } from '../users/schema/user.schema';
+import { SocialAccount, User } from '../users/schema/user.schema';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 
 interface SignupDto {
@@ -9,11 +9,13 @@ interface SignupDto {
   password: string;
   confirmPassword: string;
   name: string;
-  phoneNumber: string;
-  postCode: string;
-  address: string;
+  firstNameKana: string;
+  lastNameKana: string;
+  phoneNumber?: string;
+  postCode?: string;
+  address?: string;
   detailAddress?: string;
-  accountNumber: string;
+  accountNumber?: string;
 }
 
 interface UpdateLinkedAccountsDto {
@@ -24,6 +26,15 @@ interface UpdateLinkedAccountsDto {
 @Controller('auth')
 export class AuthController {
   constructor(private authService: AuthService) {}
+
+  @Get('check-email')
+  async checkEmail(@Query('email') email: string) {
+    if (!email) {
+      return { available: false, error: 'Email is required' };
+    }
+    const available = await this.authService.checkEmailAvailability(email);
+    return { available };
+  }
 
   @Post('signup')
   async signup(@Body() signupDto: SignupDto, @Res({ passthrough: true }) res: Response) {
@@ -70,15 +81,15 @@ export class AuthController {
     return this.authService.updateLinkedAccounts(updateDto);
   }
 
-  @Post('complete-sns-setup')
-  @UseGuards(JwtAuthGuard)
-  async completeSnsSetup(@Request() req) {
-    return this.authService.completeSnsSetup(req.user.id.toString());
-  }
-
   @Delete('user')
   @UseGuards(JwtAuthGuard)
   async deleteAccount(@Request() req) {
     return this.authService.deleteAccount(req.user.id.toString());
+  }
+
+  @Patch('user')
+  @UseGuards(JwtAuthGuard)
+  async updateUser(@Request() req, @Body() updateData: Partial<User>) {
+    return this.authService.updateUser(req.user.id.toString(), updateData);
   }
 }

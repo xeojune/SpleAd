@@ -311,9 +311,10 @@ export class InstagramController {
   }
 
   @Post('callback')
-  async handleCallback(@Body('code') code: string, @Headers('origin') origin: string) {
+  async handleCallback(@Body('code') code: string, @Body('redirect_uri') redirectUri: string, @Headers('origin') origin: string) {
     console.log('📥 Received authorization code:', code);
     console.log('🌐 Request origin:', origin);
+    console.log('🔄 Using redirect URI:', redirectUri);
 
     if (!code) {
       console.error('❌ No authorization code provided');
@@ -326,7 +327,7 @@ export class InstagramController {
       formData.append('client_id', this.clientId);
       formData.append('client_secret', this.clientSecret);
       formData.append('grant_type', 'authorization_code');
-      formData.append('redirect_uri', this.redirectUri);
+      formData.append('redirect_uri', redirectUri || this.redirectUri);  // Use provided redirect URI or fallback
       formData.append('code', code);
 
       console.log('📤 Sending token exchange request to Instagram...');

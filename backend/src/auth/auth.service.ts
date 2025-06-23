@@ -15,11 +15,13 @@ interface SignupDto {
   password: string;
   confirmPassword: string;
   name: string;
-  phoneNumber: string;
-  postCode: string;
-  address: string;
+  firstNameKana: string;
+  lastNameKana: string;
+  phoneNumber?: string;
+  postCode?: string;
+  address?: string;
   detailAddress?: string;
-  accountNumber: string;
+  accountNumber?: string;
 }
 
 interface UpdateLinkedAccountsDto {
@@ -34,17 +36,21 @@ export class AuthService {
     private jwtService: JwtService,
   ) {}
 
+  async checkEmailAvailability(email: string): Promise<boolean> {
+    console.log('Checking email availability for:', email);
+    const user = await this.userModel.findOne({ email }).exec();
+    console.log('User found:', !!user);
+    return !user; // Return true if user doesn't exist (email is available)
+  }
+
   async signup(signupDto: SignupDto) {
     const { 
       email, 
       password, 
       confirmPassword,
       name,
-      phoneNumber,
-      postCode,
-      address,
-      detailAddress,
-      accountNumber
+      firstNameKana,
+      lastNameKana,
     } = signupDto;
 
     // Validate password confirmation
@@ -61,16 +67,18 @@ export class AuthService {
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Create new user
+    // Create new user with empty strings for required fields
     const user = new this.userModel({
       email,
       password: hashedPassword,
       name,
-      phoneNumber,
-      postCode,
-      address,
-      detailAddress,
-      accountNumber,
+      firstNameKana,
+      lastNameKana,
+      phoneNumber: '',
+      postCode: '',
+      address: '',
+      detailAddress: '',
+      accountNumber: '',
       linkedAccounts: []
     });
 
@@ -165,23 +173,6 @@ export class AuthService {
     };
   }
 
-  async completeSnsSetup(userId: string) {
-    const updatedUser = await this.userModel.findByIdAndUpdate(
-      userId,
-      { hasCompletedSnsSetup: true },
-      { new: true }
-    );
-
-    if (!updatedUser) {
-      throw new NotFoundException('User not found');
-    }
-
-    return {
-      success: true,
-      hasCompletedSnsSetup: updatedUser.hasCompletedSnsSetup
-    };
-  }
-
   async deleteAccount(userId: string) {
     const deletedUser = await this.userModel.findByIdAndDelete(userId);
     
@@ -193,5 +184,20 @@ export class AuthService {
       success: true,
       message: 'Account deleted successfully'
     };
+  }
+
+  async updateUser(userId: string, updateData: Partial<User>) {
+    const user = await this.userModel.findByIdAndUpdate(
+      userId,
+      { $set: updateData },
+      { new: true }
+    ).exec();
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    const { password: _, ...result } = user.toJSON();
+    return result;
   }
 }
