@@ -2,7 +2,7 @@ import axios, { AxiosError } from 'axios';
 
 const INSTAGRAM_AUTH_URL = 'https://www.instagram.com/oauth/authorize';
 const CLIENT_ID = '1257114546025522';
-const REDIRECT_URI = 'https://0005-220-76-70-1.ngrok-free.app/link';
+const REDIRECT_URI = 'https://0005-220-76-70-1.ngrok-free.app/profile/sns';
 const API_URL = 'http://localhost:3000';
 
 export interface InstagramTokenResponse {
@@ -80,27 +80,25 @@ export const getInstagramAuthUrl = (userId: string): string => {
 
 export const exchangeCodeForToken = async (code: string, userId: string): Promise<InstagramTokenResponse> => {
   try {
-    console.log('📤 Sending code to backend for token exchange:', code);
-    const response = await axios.post<InstagramTokenResponse>(`${API_URL}/instagram/callback`, { code, userId });
+    const redirect_uri = `${window.location.origin}/profile/sns`;
+    console.log('📤 Sending code to backend for token exchange:', { code, redirect_uri });
+    
+    const response = await axios.post<InstagramTokenResponse>(
+      `${API_URL}/instagram/callback`, 
+      { code, userId, redirect_uri }
+    );
     
     console.log('📥 Raw token response data:', {
       ...response.data,
       access_token: response.data.access_token?.substring(0, 10) + '...',
       long_lived_token: response.data.long_lived_token?.substring(0, 10) + '...'
     });
-    
-    console.log('📥 Parsed token response:', {
-      userId: response.data.id,
-      username: response.data.username,
-      shortLivedToken: response.data.access_token?.substring(0, 10) + '...',
-      longLivedToken: response.data.long_lived_token?.substring(0, 10) + '...',
-      expiresIn: response.data.expires_in,
-      profilePictureUrl: response.data.profile_picture_url,
-      followersCount: response.data.followers_count,
-      followsCount: response.data.follows_count,
-      mediaCount: response.data.media_count
-    });
-    
+
+    if (!response.data.access_token) {
+      console.error('❌ No access token in response data');
+      throw new Error('No access token received');
+    }
+
     if (!response.data.id) {
       console.error('❌ No user ID in response data');
     }

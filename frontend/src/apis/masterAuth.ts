@@ -15,12 +15,15 @@ interface LoginResponse {
     id?: string;  // For backward compatibility
     _id: string;  // From MongoDB
     email: string;
-    name: string | null;
+    name: string;
+    firstNameKana: string;
+    lastNameKana: string;
     phoneNumber?: string;  // Added phone number as optional
     lineId?: string;  // to be added
     recipientName?: string; //to be added
     recipientNameKana?: string; //too be added
     recipientPhoneNumber?: string; //to be added
+    accountNumber?: string; //to be added
     postCode?: string;  // Added postcode field
     address?: string;   // Added address field
     hasCompletedSnsSetup: boolean;
@@ -45,11 +48,8 @@ interface SignupData {
   password: string;
   confirmPassword: string;
   name: string;
-  phoneNumber: string;
-  postCode: string;
-  address: string;
-  detailAddress?: string;
-  accountNumber: string;
+  firstNameKana: string;
+  lastNameKana: string;
 }
 
 interface LoginData {
@@ -61,10 +61,12 @@ interface AuthApi {
   login(data: LoginData): Promise<LoginResponse>;
   signup(data: SignupData): Promise<Omit<LoginResponse['user'], 'id'>>;
   logout(): Promise<void>;
-  isAuthenticated(): Promise<{ authenticated: boolean; user?: LoginResponse['user'] }>;
+  isAuthenticated(): Promise<{ authenticated: boolean; user: LoginResponse['user'] | null }>;
   getCurrentUser(): Promise<LoginResponse['user']>;
   completeSnsSetup(): Promise<{ success: boolean; hasCompletedSnsSetup: boolean }>;
   deleteAccount(): Promise<void>;
+  checkEmailAvailability(email: string): Promise<{ available: boolean }>;
+  updateUser(data: Partial<LoginResponse['user']>): Promise<LoginResponse['user']>;
 }
 
 export const authApi: AuthApi = {
@@ -96,46 +98,94 @@ export const authApi: AuthApi = {
 
   async logout(): Promise<void> {
     try {
-      await api.post('/auth/logout');
-      // Don't need to remove token from localStorage
+      // First clear all client-side data
       localStorage.removeItem('user');
       localStorage.removeItem('user_id');
-      console.log('logout successful'); // Debug log
+      localStorage.removeItem('token');
+      localStorage.removeItem('refreshToken');
+      localStorage.removeItem('accessToken');
+      localStorage.removeItem('userId');
+      localStorage.removeItem('x_auth_state');
+      localStorage.removeItem('tiktok_auth_state');
+      localStorage.removeItem('instagram_user_id');
+      
+      // Reset axios instance
+      delete api.defaults.headers.common['Authorization'];
+      
+      // Then send logout request to server
+      await api.post('/auth/logout', {}, {
+        withCredentials: true
+      });
+      
+      // No need for alert here since navigation will happen immediately
     } catch (error) {
-      console.error('logout failed:', error); // Debug log
+      console.error('Logout failed:', error);
+      // Still clear local data even if server request fails
+      localStorage.clear();
+      delete api.defaults.headers.common['Authorization'];
       throw error;
     }
   },
 
-  async isAuthenticated(): Promise<{ authenticated: boolean; user?: LoginResponse['user'] }> {
+  async isAuthenticated(): Promise<{ authenticated: boolean; user: LoginResponse['user'] | null }> {
     try {
-      const user = await this.getCurrentUser();
-      console.log('isAuthenticated check - user:', user);
+      const response = await api.get<LoginResponse['user']>('/auth/me', {
+        withCredentials: true
+      });
+      
+      if (!response.data || !response.data._id) {
+        throw new Error('Invalid user data');
+      }
+
       return {
-        authenticated: !!(user?._id || user?.id), // Check both _id and id
-        user
+        authenticated: true,
+        user: {
+          ...response.data,
+          id: response.data._id,
+        },
       };
     } catch (error) {
-      console.error('isAuthenticated check failed:', error);
-      return { authenticated: false };
+      // Clear all auth data if authentication fails
+      localStorage.removeItem('user');
+      localStorage.removeItem('user_id');
+      localStorage.removeItem('token');
+      localStorage.removeItem('refreshToken');
+      localStorage.removeItem('accessToken');
+      localStorage.removeItem('userId');
+      localStorage.removeItem('x_auth_state');
+      localStorage.removeItem('tiktok_auth_state');
+      localStorage.removeItem('instagram_user_id');
+      
+      // Reset axios instance
+      delete api.defaults.headers.common['Authorization'];
+      
+      return {
+        authenticated: false,
+        user: null,
+      };
     }
   },
 
   async getCurrentUser(): Promise<LoginResponse['user']> {
     try {
-      const response = await api.get<LoginResponse['user']>('/auth/me');
-      console.log('getCurrentUser response:', response.data);
+      // Make sure to include credentials to send cookies
+      const response = await api.get<LoginResponse['user']>('/auth/me', {
+        withCredentials: true
+      });
       
-      // Transform the response to ensure id is present
-      const userData = {
+      if (!response.data || !response.data._id) {
+        throw new Error('Invalid user data received');
+      }
+
+      return {
         ...response.data,
-        id: response.data._id, // Add id field based on _id
+        id: response.data._id,
       };
-      
-      localStorage.setItem('user', JSON.stringify(userData));
-      return userData;
     } catch (error) {
       console.error('getCurrentUser failed:', error);
+      // Clear any stale data
+      localStorage.removeItem('user');
+      localStorage.removeItem('user_id');
       throw error;
     }
   },
@@ -157,6 +207,26 @@ export const authApi: AuthApi = {
       console.log('Account deletion successful');
     } catch (error) {
       console.error('Account deletion failed:', error);
+      throw error;
+    }
+  },
+
+  async checkEmailAvailability(email: string): Promise<{ available: boolean }> {
+    try {
+      const response = await api.get<{ available: boolean }>(`/auth/check-email?email=${encodeURIComponent(email)}`);
+      return response.data;
+    } catch (error) {
+      console.error('Email check failed:', error);
+      throw error;
+    }
+  },
+
+  async updateUser(data: Partial<LoginResponse['user']>): Promise<LoginResponse['user']> {
+    try {
+      const response = await api.patch<LoginResponse['user']>('/auth/user', data);
+      return response.data;
+    } catch (error) {
+      console.error('Update user failed:', error);
       throw error;
     }
   }

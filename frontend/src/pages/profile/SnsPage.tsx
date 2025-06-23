@@ -87,7 +87,13 @@ const SnsPage: React.FC = () => {
     platform: '',
     logo: ''
   });
-  const [linkedAccounts, setLinkedAccounts] = useState<LinkedAccount[]>([]);
+  const [linkedAccounts, setLinkedAccounts] = useState<LinkedAccount[]>([
+    { platform: 'Instagram', username: '', isConnected: false },
+    { platform: 'TikTok', username: '', isConnected: false },
+    { platform: 'X (旧Twitter)', username: '', isConnected: false },
+    { platform: 'LIPS', username: '', isConnected: false },
+    { platform: '@cosme', username: '', isConnected: false }
+  ]);
   const [isLoading, setIsLoading] = useState(true);
   const [isProcessing, setIsProcessing] = useState(false);
 
@@ -153,26 +159,35 @@ const SnsPage: React.FC = () => {
       const error = params.get('error');
       const state = params.get('state');
       
-      if (!code || error) {
+      // Early return if no code or already processed
+      if (!code || error || localStorage.getItem('oauth_processing')) {
         setIsProcessing(false);
         return;
       }
 
+      // Set processing flag
+      localStorage.setItem('oauth_processing', 'true');
+      
       try {
         const lastAttemptedPlatform = localStorage.getItem('lastAttemptedPlatform');
-        if (!lastAttemptedPlatform) return;
+        if (!lastAttemptedPlatform) {
+          localStorage.removeItem('oauth_processing');
+          return;
+        }
 
         const user = await authApi.getCurrentUser();
         const userId = user?._id || user?.id;
         if (!userId) {
           console.error('No user ID found');
           navigate('/login');
+          localStorage.removeItem('oauth_processing');
           return;
         }
 
         let updatedAccount = null;
+        const platformLower = lastAttemptedPlatform.toLowerCase();
 
-        if (lastAttemptedPlatform === 'Instagram') {
+        if (platformLower === 'instagram') {
           const instagramResponse = await exchangeCodeForToken(code, userId);
           updatedAccount = {
             platform: 'Instagram',
@@ -183,13 +198,13 @@ const SnsPage: React.FC = () => {
             followsCount: instagramResponse?.follows_count || 0,
             mediaCount: instagramResponse?.media_count || 0
           };
-        } else if (lastAttemptedPlatform === 'Tiktok' && state) {
+        } else if (platformLower === 'tiktok' && state) {
           const tiktokResponse = await TikTokAuth.handleCallback(code, state, userId);
           const userData = tiktokResponse?.tokenData?.userData || {};
           const stats = userData?.stats || {};
           
           updatedAccount = {
-            platform: 'Tiktok',  // Match the platform name used in localStorage
+            platform: 'TikTok',
             isConnected: true,
             username: userData?.display_name || 'TikTok User',
             profilePictureUrl: userData?.avatar_url || '',
@@ -200,25 +215,36 @@ const SnsPage: React.FC = () => {
         }
 
         if (updatedAccount) {
-          const updatedAccounts = linkedAccounts.map(account =>
-            account.platform === updatedAccount.platform ? { ...account, ...updatedAccount } : account
-          );
+          let updatedAccounts: LinkedAccount[];
+          
+          // If the account already exists in the array, update it
+          if (linkedAccounts.some(acc => acc.platform === updatedAccount.platform)) {
+            updatedAccounts = linkedAccounts.map(account =>
+              account.platform === updatedAccount.platform ? { ...account, ...updatedAccount } : account
+            );
+          } else {
+            // If it doesn't exist, add it to the array
+            updatedAccounts = [...linkedAccounts, updatedAccount];
+          }
+          
           setLinkedAccounts(updatedAccounts);
           await updateLinkedAccounts(updatedAccounts);
         }
 
-        // Clear URL parameters and lastAttemptedPlatform
+        // Clear URL parameters and flags
         window.history.replaceState({}, document.title, window.location.pathname);
         localStorage.removeItem('lastAttemptedPlatform');
+        localStorage.removeItem('oauth_processing');
       } catch (error) {
         console.error('Failed to process OAuth callback:', error);
+        localStorage.removeItem('oauth_processing');
       } finally {
         setIsProcessing(false);
       }
     };
 
     handleOAuthCallback();
-  }, [linkedAccounts, navigate, updateLinkedAccounts]);
+  }, [navigate, updateLinkedAccounts]);
 
   const handleOAuthConnect = async (platform: string) => {
     try {
@@ -328,8 +354,8 @@ const SnsPage: React.FC = () => {
             logo={tiktokLogo}
             title="TikTok"
             onConnect={() => handleConnect('TikTok', tiktokLogo, false)}
-            isConnected={linkedAccounts.some(acc => acc.platform === 'Tiktok' && acc.isConnected)}
-            username={linkedAccounts.find(acc => acc.platform === 'Tiktok')?.username}
+            isConnected={linkedAccounts.some(acc => acc.platform === 'TikTok' && acc.isConnected)}
+            username={linkedAccounts.find(acc => acc.platform === 'TikTok')?.username}
           />
           <SnsCard
             logo={xLogo}

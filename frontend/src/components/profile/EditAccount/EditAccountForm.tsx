@@ -17,8 +17,6 @@ import ArrowIcon from '../../icons/ArrowIcon';
 
 interface FormData {
   email: string;
-  name: string;
-  phone: string;
   lineId: string;
 }
 
@@ -26,8 +24,6 @@ const EditAccountForm: React.FC = () => {
   const navigate = useNavigate();
   const [formData, setFormData] = useState<FormData>({
     email: '',
-    name: '',
-    phone: '',
     lineId: '',
   });
 
@@ -39,8 +35,6 @@ const EditAccountForm: React.FC = () => {
           setFormData(prevData => ({
             ...prevData,
             email: user.email || '',
-            name: user.name || '',
-            phone: user.phoneNumber || '',
             lineId: user.lineId || '',
           }));
         }
@@ -61,22 +55,27 @@ const EditAccountForm: React.FC = () => {
     }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: Implement API call to update user information
-    console.log('Form submitted:', formData);
-    navigate('/profile/my-accounts');
+    try {
+      await authApi.updateUser({
+        lineId: formData.lineId,
+      });
+      navigate('/profile/my-account');
+    } catch (error) {
+      console.error('Failed to update user:', error);
+    }
   };
 
   return (
     <FormContainer>
       <Header>
         <BackButton onClick={() => navigate('/profile/my-account')}>
-            <RotatedArrow>
-                <ArrowIcon />
-            </RotatedArrow>
+          <RotatedArrow>
+            <ArrowIcon />
+          </RotatedArrow>
         </BackButton>
-        <Title>メールアドレスの変更</Title>
+        <Title>アカウント編集</Title>
       </Header>
 
       <Form onSubmit={handleSubmit}>
@@ -87,28 +86,6 @@ const EditAccountForm: React.FC = () => {
             name="email"
             value={formData.email}
             disabled
-          />
-        </FormGroup>
-
-        <FormGroup>
-          <Label>氏名</Label>
-          <Input
-            type="text"
-            name="name"
-            value={formData.name}
-            onChange={handleChange}
-            placeholder="氏名を入力してください。"
-          />
-        </FormGroup>
-
-        <FormGroup>
-          <Label>携帯電話番号</Label>
-          <Input
-            type="tel"
-            name="phone"
-            value={formData.phone}
-            onChange={handleChange}
-            placeholder="000-0000-0000"
           />
         </FormGroup>
 

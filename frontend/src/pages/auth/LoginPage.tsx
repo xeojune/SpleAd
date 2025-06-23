@@ -1,167 +1,134 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router';
-import {
-  LoginContainer,
-  LeftPanel,
-  RightPanel,
-  LoginForm,
-  Logo,
-  InputGroup,
-  Label,
-  Input,
-  RememberMeContainer,
-  CheckboxLabel,
-  LoginButton,
-  GoogleButton,
-  ForgotPassword,
-  SignUpText,
-  Divider,
-  Title,
-} from '../../styles/auth/LoginPage.styles';
-import spleadLogo from '../../assets/logo.png';
-import opendreamLogo from '../../assets/opendreamlogo.png';
-import googleIcon from '../../assets/google.png';
+import { PageContainer, Header, BackButton, RotatedArrow, ContentArea, Title, Logo, Form, InputGroup, Label, Input, ErrorMessage, LoginButton, Links } from '../../styles/auth/LoginPage.styles';
 import { authApi } from '../../apis/masterAuth';
-import axios from 'axios';
+import ArrowIcon from '../../components/icons/ArrowIcon';
+import logo from '../../assets/logo.png';
 
 const LoginPage: React.FC = () => {
   const navigate = useNavigate();
-  const [formData, setFormData] = useState({
-    email: '',
-    password: '',
-    rememberMe: false,
-  });
-  const [error, setError] = useState<string>('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [emailError, setEmailError] = useState('');
+  const [passwordError, setPasswordError] = useState('');
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value, type, checked } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: type === 'checkbox' ? checked : value,
-    }));
-    setError(''); // Clear error when user types
+  const isValidEmail = (email: string) => {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  };
+
+  const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setEmail(value);
+    
+    if (!value) {
+      setEmailError('メールアドレスを入力してください。');
+    } else if (!isValidEmail(value)) {
+      setEmailError('正しいメールアドレスの形式で入力してください。');
+    } else {
+      setEmailError('');
+    }
+  };
+
+  const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setPassword(value);
+    
+    if (!value) {
+      setPasswordError('パスワードを入力してください。');
+      return;
+    }
+
+    const errors: string[] = [];
+    
+    if (value.length < 8) {
+      errors.push('パスワードは8文字以上で入力してください。');
+    }
+    if (!/[a-z]/.test(value)) {
+      errors.push('小文字を1文字以上含めてください。');
+    }
+    if (!/[A-Z]/.test(value)) {
+      errors.push('大文字を1文字以上含めてください。');
+    }
+    if (!/[0-9]/.test(value)) {
+      errors.push('数字を1文字以上含めてください。');
+    }
+    if (!/[!@#$%^&*(),.?":{}|<>]/.test(value)) {
+      errors.push('記号を1文字以上含めてください。');
+    }
+
+    setPasswordError(errors.length > 0 ? errors.join('\n') : '');
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
-    
-    // Check if email and password are filled
-    if (!formData.email || !formData.password) {
-      setError('Please fill in all fields');
+    if (!email || !password || !isValidEmail(email) || passwordError) {
       return;
     }
-
+    
+    setIsLoading(true);
     try {
-      const response = await authApi.login({
-        email: formData.email,
-        password: formData.password,
-      });
-      
-      // Store user ID and token
-      if (response.user?.id) {
-        localStorage.setItem('user_id', response.user.id);
-      }
-      
-      // If remember me is checked, save email
-      if (formData.rememberMe) {
-        localStorage.setItem('rememberedEmail', formData.email);
+      await authApi.login({ email, password });
+      navigate('/dashboard');
+    } catch (error: any) {
+      console.error('Login failed:', error);
+      if (error.response?.status === 401) {
+        setEmailError('メールアドレスまたはパスワードが正しくありません。');
       } else {
-        localStorage.removeItem('rememberedEmail');
+        alert('ログインに失敗しました。');
       }
-
-      // Navigate to dashboard after successful login
-      navigate('/link');
-    } catch (err) {
-      if (axios.isAxiosError(err)) {
-        setError(err.response?.data?.message || 'Login failed. Please try again.');
-      } else {
-        setError('An unexpected error occurred');
-      }
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  // Load remembered email on component mount
-  React.useEffect(() => {
-    const rememberedEmail = localStorage.getItem('rememberedEmail');
-    if (rememberedEmail) {
-      setFormData(prev => ({
-        ...prev,
-        email: rememberedEmail,
-        rememberMe: true,
-      }));
-    }
-  }, []);
+  const isFormValid = email && password && !emailError && !passwordError;
 
   return (
-    <LoginContainer>
-      <LeftPanel>
-        <img src={spleadLogo} alt="Splead" />
-      </LeftPanel>
-      
-      <RightPanel>
-        <Logo>
-          <img src={opendreamLogo} alt="OpenDream" />
-        </Logo>
-        <LoginForm onSubmit={handleSubmit}>
-          <Title>Login</Title>
-
-          {error && <div style={{ color: 'red', marginBottom: '1rem' }}>{error}</div>}
-
+    <PageContainer>
+      <Header>
+        <BackButton onClick={() => navigate('/dashboard')}>
+          <RotatedArrow>
+            <ArrowIcon />
+          </RotatedArrow>
+        </BackButton>
+        <Title>ログイン</Title>
+      </Header>
+      <ContentArea>
+        <Logo src={logo} alt="COCO Logo" />
+        <Form onSubmit={handleSubmit}>
           <InputGroup>
-            <Label htmlFor="email">이메일 또는 아이디</Label>
+            <Label>メールアドレス</Label>
             <Input
-              type="text"
-              id="email"
-              name="email"
-              value={formData.email}
-              onChange={handleChange}
-              placeholder="이메일 또는 아이디를 입력해주세요"
+              type="email"
+              value={email}
+              onChange={handleEmailChange}
+              placeholder="メールアドレスを入力"
+              required
             />
+            {emailError && <ErrorMessage>{emailError}</ErrorMessage>}
           </InputGroup>
-
           <InputGroup>
-            <Label htmlFor="password">비밀번호</Label>
+            <Label>パスワード</Label>
             <Input
               type="password"
-              id="password"
-              name="password"
-              value={formData.password}
-              onChange={handleChange}
-              placeholder="비밀번호를 입력해주세요"
+              value={password}
+              onChange={handlePasswordChange}
+              placeholder="パスワードを入力"
+              required
             />
+            {passwordError && <ErrorMessage style={{ whiteSpace: 'pre-line' }}>{passwordError}</ErrorMessage>}
           </InputGroup>
-
-          <RememberMeContainer>
-            <CheckboxLabel>
-              <input
-                type="checkbox"
-                name="rememberMe"
-                checked={formData.rememberMe}
-                onChange={handleChange}
-              />
-              아이디 저장하기
-            </CheckboxLabel>
-            <ForgotPassword href="/forgot-password">비밀번호 찾기</ForgotPassword>
-          </RememberMeContainer>
-
-          <LoginButton type="submit">로그인</LoginButton>
-          
-          <Divider>
-            <span>Or</span>
-          </Divider>
-
-          <GoogleButton type="button">
-            <img src={googleIcon} alt="Google" />
-            또는 구글로 로그인
-          </GoogleButton>
-
-          <SignUpText>
-            계정이 없으신가요? <a href="/register">회원가입</a>
-          </SignUpText>
-        </LoginForm>
-      </RightPanel>
-    </LoginContainer>
+          <LoginButton type="submit" disabled={!isFormValid || isLoading}>
+            {isLoading ? 'ログイン中...' : 'ログイン'}
+          </LoginButton>
+        </Form>
+        <Links>
+          <a href="/register">新規登録</a>
+          <a href="#">ID/パスワードを忘れた方</a>
+        </Links>
+      </ContentArea>
+    </PageContainer>
   );
 };
 

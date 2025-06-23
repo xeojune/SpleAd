@@ -30,9 +30,13 @@ const PrivacySetting: React.FC = () => {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
 
-  const handleLogout = () => {
-    localStorage.clear();
-    navigate('/login');
+  const handleLogout = async () => {
+    try {
+      await authApi.logout();
+      navigate('/'); // Navigate to dashboard page after logout
+    } catch (error) {
+      console.error('Logout failed:', error);
+    }
   };
 
   const handleDeleteAccount = async () => {

@@ -5,6 +5,8 @@ import { authApi } from '../../../apis/masterAuth';
 
 interface UserAddressData {
   name: string;
+  firstNameKana: string;
+  lastNameKana: string;
   email: string;
   phoneNumber?: string;
   postCode?: string;
@@ -91,6 +93,8 @@ const AddressInfo: React.FC = () => {
         }
         setUserData({
           name: user.name,
+          firstNameKana: user.firstNameKana || '',
+          lastNameKana: user.lastNameKana || '',
           email: user.email,
           phoneNumber: user.phoneNumber,
           postCode: user.postCode,
@@ -113,15 +117,20 @@ const AddressInfo: React.FC = () => {
     <Container>
       <Title>
         お届け先情報
-        <EditButton onClick={() => navigate('/profile/my-account/edit-address')}>編集</EditButton>
+        <EditButton onClick={() => navigate('/profile/edit-address')}>編集</EditButton>
       </Title>
       <FormGroup>
         <Label>お名前（漢字）</Label>
-        <Value>未設定</Value>
+        <Value>{userData.name || '未設定'}</Value>
       </FormGroup>
       <FormGroup>
         <Label>お名前（ふりがな）</Label>
-        <Value>未設定</Value>
+        <Value>
+          {userData.lastNameKana && userData.firstNameKana 
+            ? `${userData.lastNameKana} ${userData.firstNameKana}`
+            : '未設定'
+          }
+        </Value>
       </FormGroup>
       <FormGroup>
         <Label>郵便番号</Label>
@@ -133,7 +142,7 @@ const AddressInfo: React.FC = () => {
       </FormGroup>
       <FormGroup>
         <Label>携帯電話番号</Label>
-        <Value>未設定</Value>
+        <Value>{userData.phoneNumber || '未設定'}</Value>
       </FormGroup>
     </Container>
   );

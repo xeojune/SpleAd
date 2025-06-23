@@ -6,7 +6,6 @@ import GlobalStyles from './styles/GlobalStyles';
 import LoginPage from './pages/auth/LoginPage';
 import RegisterPage from './pages/auth/RegisterPage';
 import ProtectedRoute from './components/ProtectedRoute';
-import SnsLinkPage from './pages/link/snsLinkPage';
 import DashboardPage from './pages/dashboard/dashboardPage';
 import MediaPage from './pages/media/mediaPage';
 import HomePage from './pages/home/homePage';
@@ -30,111 +29,34 @@ const App: React.FC = () => {
           {/* Public Routes */}
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
+          <Route path="/dashboard" element={<DashboardPage><HomePage /></DashboardPage>} />
+          <Route path="/dashboard/campaign" element={<DashboardPage><CampaignPage /></DashboardPage>} />
+          <Route path="/description" element={<DashboardPage><DescriptionPage /></DashboardPage>} />
+          <Route path="/media" element={<DashboardPage><MediaPage /></DashboardPage>} />
           
-          {/* Protected Routes */}
-          <Route path="/link" element={
-            <ProtectedRoute>
-              <SnsLinkPage />
-            </ProtectedRoute>
-          } />
-          <Route path="/media" element={
-            <ProtectedRoute>
-              <MediaPage />
-            </ProtectedRoute>
-          } />
-          
-          {/* Dashboard Routes */}
-          <Route path="/dashboard" element={
+          {/* Protected Profile Routes */}
+          <Route path="/profile/*" element={
             <ProtectedRoute>
               <DashboardPage>
-                <HomePage />
-              </DashboardPage>
-            </ProtectedRoute>
-          } />
-          <Route path="/dashboard/campaign" element={
-            <ProtectedRoute>
-              <DashboardPage>
-                <CampaignPage />
-              </DashboardPage>
-            </ProtectedRoute>
-          } />
-          <Route path="/description" element={
-            <ProtectedRoute>
-              <DashboardPage>
-                <DescriptionPage />
-              </DashboardPage>
-            </ProtectedRoute>
-          } />
-          <Route path="/profile" element={
-            <ProtectedRoute>
-              <DashboardPage>
-                <ProfilePage />
-              </DashboardPage>
-            </ProtectedRoute>
-          } />
-          <Route path="/profile/my-account" element={
-            <ProtectedRoute>
-              <DashboardPage>
-                <MyAccountPage />
-              </DashboardPage>
-            </ProtectedRoute>
-          } />
-          <Route path="/profile/my-account/edit-account" element={
-            <ProtectedRoute>
-              <DashboardPage>
-                <EditAccountPage />
-              </DashboardPage>
-            </ProtectedRoute>
-          } />
-          <Route path="/profile/my-account/edit-address" element={
-            <ProtectedRoute>
-              <DashboardPage>
-                <EditAddressPage />
-              </DashboardPage>
-            </ProtectedRoute>
-          } />
-          <Route path="/profile/my-bank" element={
-            <ProtectedRoute>
-              <DashboardPage>
-                <MyBankPage />
-              </DashboardPage>
-            </ProtectedRoute>
-          } />
-          <Route path="/profile/edit-bank" element={
-            <ProtectedRoute>
-              <DashboardPage>
-                <EditBankPage />
-              </DashboardPage>
-            </ProtectedRoute>
-          } />
-          <Route path="/profile/edit-password" element={
-            <ProtectedRoute>
-              <DashboardPage>
-                <EditPasswordPage />
-              </DashboardPage>
-            </ProtectedRoute>
-          } />
-          <Route path="/profile/sns" element={
-            <ProtectedRoute>
-              <DashboardPage>
-                <SnsPage />
+                <Routes>
+                  <Route path="/" element={<ProfilePage />} />
+                  <Route path="/my-account" element={<MyAccountPage />} />
+                  <Route path="/my-account/edit-account" element={<EditAccountPage />} />
+                  <Route path="/my-account/edit-address" element={<EditAddressPage />} />
+                  <Route path="/my-bank" element={<MyBankPage />} />
+                  <Route path="/edit-bank" element={<EditBankPage />} />
+                  <Route path="/edit-password" element={<EditPasswordPage />} />
+                  <Route path="/sns" element={<SnsPage />} />
+                </Routes>
               </DashboardPage>
             </ProtectedRoute>
           } />
 
-          {/* Redirect root to dashboard if authenticated, otherwise to login */}
-          <Route path="/" element={
-            <ProtectedRoute>
-              <Navigate to="/dashboard" replace />
-            </ProtectedRoute>
-          } />
+          {/* Redirect root to dashboard */}
+          <Route path="/" element={<Navigate to="/dashboard" replace />} />
 
-          {/* Catch all route - redirect to dashboard if authenticated, otherwise to login */}
-          <Route path="*" element={
-            <ProtectedRoute>
-              <Navigate to="/dashboard" replace />
-            </ProtectedRoute>
-          } />
+          {/* Catch all route - redirect to dashboard */}
+          <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Routes>
       </Router>
     </ThemeProvider>

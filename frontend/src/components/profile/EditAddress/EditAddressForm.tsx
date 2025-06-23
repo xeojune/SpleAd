@@ -16,7 +16,8 @@ import {
 import ArrowIcon from '../../icons/ArrowIcon';
 
 interface FormData {
-  lastName: string;
+  name: string;
+  firstNameKana: string;
   lastNameKana: string;
   postCode: string;
   address: string;
@@ -26,7 +27,8 @@ interface FormData {
 const EditAddressForm: React.FC = () => {
   const navigate = useNavigate();
   const [formData, setFormData] = useState<FormData>({
-    lastName: '',
+    name: '',
+    firstNameKana: '',
     lastNameKana: '',
     postCode: '',
     address: '',
@@ -40,11 +42,12 @@ const EditAddressForm: React.FC = () => {
         if (user) {
           setFormData(prevData => ({
             ...prevData,
-            lastName: user.recipientName?.split(' ')[0] || '',
-            lastNameKana: user.recipientNameKana?.split(' ')[0] || '',
+            name: user.name || '',
+            firstNameKana: user.firstNameKana || '',
+            lastNameKana: user.lastNameKana || '',
             postCode: user.postCode || '',
             address: user.address || '',
-            phoneNumber: user.recipientPhoneNumber || '',
+            phoneNumber: user.phoneNumber || '',
           }));
         }
       } catch (error) {
@@ -64,11 +67,21 @@ const EditAddressForm: React.FC = () => {
     }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: Implement API call to update user information
-    console.log('Form submitted:', formData);
-    navigate('/profile/my-account');
+    try {
+      await authApi.updateUser({
+        name: formData.name,
+        firstNameKana: formData.firstNameKana,
+        lastNameKana: formData.lastNameKana,
+        postCode: formData.postCode,
+        address: formData.address,
+        phoneNumber: formData.phoneNumber,
+      });
+      navigate('/profile/my-account');
+    } catch (error) {
+      console.error('Failed to update user:', error);
+    }
   };
 
   return (
@@ -79,30 +92,41 @@ const EditAddressForm: React.FC = () => {
             <ArrowIcon />
           </RotatedArrow>
         </BackButton>
-        <Title>住所変更</Title>
+        <Title>配送先住所の編集</Title>
       </Header>
 
       <Form onSubmit={handleSubmit}>
         <FormGroup>
-          <Label>お名前（漢字）</Label>
+          <Label>氏名</Label>
           <Input
             type="text"
-            name="lastName"
-            value={formData.lastName}
+            name="name"
+            value={formData.name}
             onChange={handleChange}
-            placeholder="お名前（漢字）"
+            placeholder="氏名を入力してください。"
           />
         </FormGroup>
 
         <FormGroup>
-          <Label>お名前（ふりがな）</Label>
-          <Input
-            type="text"
-            name="lastNameKana"
-            value={formData.lastNameKana}
-            onChange={handleChange}
-            placeholder="お名前（ふりがな）"
-          />
+          <Label>氏名（フリガナ）</Label>
+          <div style={{ display: 'flex', gap: '10px' }}>
+            <Input
+              type="text"
+              name="lastNameKana"
+              value={formData.lastNameKana}
+              onChange={handleChange}
+              placeholder="セイ"
+              style={{ width: '50%' }}
+            />
+            <Input
+              type="text"
+              name="firstNameKana"
+              value={formData.firstNameKana}
+              onChange={handleChange}
+              placeholder="メイ"
+              style={{ width: '50%' }}
+            />
+          </div>
         </FormGroup>
 
         <FormGroup>

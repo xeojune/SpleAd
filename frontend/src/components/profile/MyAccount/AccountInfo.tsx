@@ -7,6 +7,7 @@ interface UserData {
   name: string;
   email: string;
   phone?: string;
+  lineId?: string;
 }
 
 const Container = styled.div`
@@ -76,7 +77,8 @@ const AccountInfo: React.FC = () => {
         setUserData({
           name: user.name,
           email: user.email,
-          phone: user.phoneNumber
+          phone: user.phoneNumber,
+          lineId: user.lineId
         });
       } catch (error) {
         console.error('Failed to load user data:', error);
@@ -86,21 +88,6 @@ const AccountInfo: React.FC = () => {
 
     loadUserData();
   }, [navigate]);
-
-  const formatPhoneNumber = (phone: string | undefined): string => {
-    if (!phone) return '未設定';
-  
-    // Remove any non-digit characters
-    const cleaned = phone.replace(/\D/g, '');
-  
-    // Format as 010-1234-5678
-    if (cleaned.length === 11) {
-      return `${cleaned.slice(0, 3)}-${cleaned.slice(3, 7)}-${cleaned.slice(7)}`;
-    }
-  
-    // If the number doesn't match the expected format, return as is
-    return phone;
-  };
 
   if (!userData) {
     return <div>Loading...</div>;
@@ -117,16 +104,8 @@ const AccountInfo: React.FC = () => {
         <Value>{userData.email}</Value>
       </FormGroup>
       <FormGroup>
-        <Label>氏名</Label>
-        <Value>{userData.name}</Value>
-      </FormGroup>
-      <FormGroup>
-        <Label>携帯電話番号</Label>
-        <Value>{formatPhoneNumber(userData.phone)}</Value>
-      </FormGroup>
-      <FormGroup>
         <Label>LINE ID</Label>
-        <Value>未設定</Value>
+        <Value>{userData.lineId || '未設定'}</Value>
       </FormGroup>
     </Container>
   );

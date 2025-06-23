@@ -1,226 +1,174 @@
 import styled from 'styled-components';
 
-export const LoginContainer = styled.div`
+export const PageContainer = styled.div`
+  max-width: 24.5625rem;
+  font-family: Pretendard JP;
+  margin: 0 auto;
+  padding-bottom: 4.375rem;
+  background: white;
+  min-height: 53.25rem;
   display: flex;
-  min-height: 100vh;
-  background-color: #ffffff;
-  overflow: hidden;
+  flex-direction: column;
+  
+  @media screen and (max-width: 48rem) {
+    max-width: none;
+    padding-bottom: 3.75rem;
+  }
 `;
 
-export const LeftPanel = styled.div`
-  flex: 0 0 50%;
-  width: 50%;
+export const Header = styled.div`
+  display: flex;
+  align-items: center;
+  height: 3.25rem;
+  padding: 0 1.25rem;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
   background-color: white;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  position: relative;
-  overflow: hidden;
-
-  img {
-    width: 50%;
-    object-fit: cover;
-    top: 0;
-    left: 0;
+  z-index: 10;
+  max-width: 24.5625rem;
+  margin: 0 auto;
+  
+  @media screen and (max-width: 48rem) {
+    max-width: none;
+    padding: 0 1rem;
   }
 `;
 
-export const RightPanel = styled.div`
-  flex: 0 0 50%;
-  width: 50%;
+export const ContentArea = styled.div`
+  flex: 1;
+  overflow-y: auto;
+  margin-top: 3.25rem; /* Same as header height */
+  padding: 0 1.25rem;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  padding: 2rem;
-  background-color: #ffffff;
+  
+  @media screen and (max-width: 48rem) {
+    padding: 0 1rem;
+  }
 `;
 
-export const Logo = styled.div`
+export const BackButton = styled.button`
+  background: none;
+  border: none;
+  padding: 0;
+  margin-right: 1rem;
+  cursor: pointer;
   display: flex;
-  width: 100%;
   align-items: center;
-  gap: 8px;
-  margin-bottom: 50px;
-  max-width: 400px;
-  transform: translateX(-13%);
-  
-  img {
-    width: 60%;
-    height: 60%;
-    object-fit: contain;
-  }
-  
-  span {
-    font-size: 20px;
-    font-weight: 600;
-  }
+  color: #1e293b;
 `;
 
-export const LoginForm = styled.form`
-  width: 100%;
-  max-width: 400px;
+export const RotatedArrow = styled.div`
+  transform: rotate(180deg);
   display: flex;
-  flex-direction: column;
-  gap: 16px;
+  align-items: center;
 `;
 
 export const Title = styled.h1`
-  font-size: 24px;
+  font-size: 1rem;
+  color: #1e293b;
   font-weight: 600;
-  color: #1a1a1a;
-  margin: 0;
-  margin-bottom: 24px;
-  text-align: center;
-  width: 100%;
 `;
 
-export const SubTitle = styled.p`
-  font-size: 14px;
-  color: #666;
-  margin: 0;
-  margin-bottom: 24px;
+export const Logo = styled.img`
+  width: 8rem;
+  margin: 6rem 0;
+`;
+
+export const Form = styled.form`
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  margin-top: 1rem;
 `;
 
 export const InputGroup = styled.div`
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 0.5rem;
 `;
 
 export const Label = styled.label`
-  font-size: 14px;
-  color: #1a1a1a;
+  font-size: 0.875rem;
+  color: #1e293b;
   font-weight: 500;
-  margin-left: 12px;
+  padding: 0 0.25rem;
 `;
 
 export const Input = styled.input`
   width: 100%;
-  padding: 12px;
-  border: 1px solid #e6e6e6;
-  border-radius: 8px;
-  font-size: 14px;
-  background-color: #f5f5f5;
+  padding: 0.75rem 1rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.5rem;
+  font-size: 1rem;
+  color: #1e293b;
+  background-color: #fff;
+  
+  &::placeholder {
+    color: #7D8CAE;
+  }
   
   &:focus {
     outline: none;
-    border-color: #FF69B4;
-    background-color: #ffffff;
-  }
-
-  &::placeholder {
-    color: #999;
+    border-color: #FF6EA5;
+    box-shadow: 0 0 0 1px #FF6EA5;
   }
 `;
 
-export const RememberMeContainer = styled.div`
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin: 8px 0;
-`;
-
-export const CheckboxLabel = styled.label`
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 14px;
-  color: #666;
-  cursor: pointer;
-
-  input {
-    width: 16px;
-    height: 16px;
-  }
+export const ErrorMessage = styled.span`
+  padding: 0 0.25rem;
+  color: #ef4444;
+  font-size: 0.875rem;
+  margin-top: 0.25rem;
 `;
 
 export const LoginButton = styled.button`
   width: 100%;
-  padding: 12px;
-  background-color: #FF69B4;
+  padding: 0.875rem;
+  background-color: #FF6EA5;
   color: white;
   border: none;
-  border-radius: 8px;
-  font-size: 14px;
-  font-weight: 600;
+  border-radius: 0.5rem;
+  font-size: 1rem;
+  font-weight: 500;
   cursor: pointer;
   transition: background-color 0.2s;
-
-  &:hover {
-    background-color: #FF1493;
-  }
-`;
-
-export const GoogleButton = styled.button`
-  width: 100%;
-  padding: 12px;
-  background-color: #333;
-  color: white;
-  border: none;
-  border-radius: 8px;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  transition: background-color 0.2s;
-
-  &:hover {
-    background-color: #444;
-  }
-
-  img {
-    width: 30px;
-    height: 30px;
-  }
-`;
-
-export const ForgotPassword = styled.a`
-  color: #FF69B4;
-  text-decoration: none;
-  font-size: 14px;
+  margin-top: 0.5rem;
   
   &:hover {
-    text-decoration: underline;
+    background-color: #FF5593;
+  }
+  
+  &:disabled {
+    background-color: #E2E8F0;
+    color: #7D8CAE;
+    cursor: not-allowed;
   }
 `;
 
-export const SignUpText = styled.p`
-  text-align: center;
-  font-size: 14px;
-  color: #666;
-  margin-top: 24px;
-
+export const Links = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+  width: 100%;
+  padding: 0 0.5rem;
+  
   a {
-    color: #FF69B4;
+    color: #7D8CAE;
     text-decoration: none;
-    font-weight: 500;
+    font-size: 0.875rem;
+    width: 100%;
+    text-align: center;
+    padding: 0.5rem;
     
     &:hover {
       text-decoration: underline;
     }
-  }
-`;
-
-export const Divider = styled.div`
-  display: flex;
-  align-items: center;
-  text-align: center;
-  margin: 16px 0;
-  
-  &::before,
-  &::after {
-    content: '';
-    flex: 1;
-    border-bottom: 1px solid #e6e6e6;
-  }
-
-  span {
-    padding: 0 16px;
-    color: #666;
-    font-size: 14px;
   }
 `;
