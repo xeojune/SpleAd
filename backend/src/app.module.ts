@@ -21,8 +21,10 @@ import { AuthModule } from './auth/auth.module';
         logger.log(`Connecting to MongoDB at: ${uri}`);
         return {
           uri,
-          useNewUrlParser: true,
-          useUnifiedTopology: true,
+          ssl: true,
+          tls: true,
+          tlsAllowInvalidCertificates: false,
+          retryWrites: true,
           connectionFactory: (connection) => {
             connection.on('connected', () => {
               logger.log('Successfully connected to MongoDB');

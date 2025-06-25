@@ -65,7 +65,13 @@ export class AuthController {
 
   @Post('logout')
   async logout(@Res({ passthrough: true }) res: Response) {
-    res.clearCookie('access_token');
+    // Clear the cookie with the same options used when setting it
+    res.clearCookie('access_token', {
+      httpOnly: true,
+      secure: true,
+      sameSite: 'none',
+      path: '/',
+    });
     return { message: 'Logged out successfully' };
   }
 
@@ -91,5 +97,19 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   async updateUser(@Request() req, @Body() updateData: Partial<User>) {
     return this.authService.updateUser(req.user.id.toString(), updateData);
+  }
+
+  @Patch('password')
+  @UseGuards(JwtAuthGuard)
+  async updatePassword(
+    @Request() req,
+    @Body('currentPassword') currentPassword: string,
+    @Body('newPassword') newPassword: string,
+  ) {
+    return this.authService.updatePassword(
+      req.user.id.toString(),
+      currentPassword,
+      newPassword
+    );
   }
 }

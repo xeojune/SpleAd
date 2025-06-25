@@ -200,4 +200,31 @@ export class AuthService {
     const { password: _, ...result } = user.toJSON();
     return result;
   }
+
+  async updatePassword(
+    userId: string,
+    currentPassword: string,
+    newPassword: string,
+  ) {
+    const user = await this.userModel.findById(userId);
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    // Verify current password
+    const isPasswordValid = await bcrypt.compare(currentPassword, user.password);
+    if (!isPasswordValid) {
+      throw new UnauthorizedException('Current password is incorrect');
+    }
+
+    // Hash new password
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    // Update password
+    await this.userModel.findByIdAndUpdate(userId, {
+      password: hashedPassword
+    });
+
+    return { success: true, message: 'Password updated successfully' };
+  }
 }

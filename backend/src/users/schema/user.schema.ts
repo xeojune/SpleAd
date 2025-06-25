@@ -42,14 +42,38 @@ export class User {
   @Prop({ default: '' })
   address: string;
 
-  @Prop()
-  detailAddress?: string;
+  @Prop({ default: '' })
+  lineId: string;
+
+  @Prop({ default: '' })
+  accountHolderLastKana: string;
+
+  @Prop({ default: '' })
+  accountHolderFirstKana: string;
+
+  @Prop({ default: '' })
+  bankName: string;
+
+  @Prop({ default: '' })
+  branchCode: string;
 
   @Prop({ default: '' })
   accountNumber: string;
 
   @Prop({ default: '' })
-  lineID: string;
+  accountType: string;
+
+  @Prop({ default: '' })
+  accountPostalCode: string;
+
+  @Prop({ default: '' })
+  accountAddress: string;
+
+  @Prop({ default: '' })
+  accountPhone: string;
+
+  @Prop({ default: '' })
+  paypalEmail: string;
 
   @Prop({ type: [{ 
     platform: String,
