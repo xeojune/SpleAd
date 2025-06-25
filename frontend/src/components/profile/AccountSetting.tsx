@@ -30,9 +30,10 @@ const AccountSetting: React.FC = () => {
     const checkRegistrationStatus = async () => {
       try {
         const user = await authApi.getCurrentUser();
+        console.log('User data for status:', user);
         setRegistrationStatus({
           account: !!(user?.name && user?.phoneNumber),
-          bank: !!user?.accountNumber,
+          bank: !!(user?.accountNumber || user?.paypalEmail),
           sns: !!(user?.linkedAccounts && user.linkedAccounts.length > 0)
         });
       } catch (error) {

@@ -51,17 +51,54 @@ export const DescriptionFooter: React.FC = () => {
 
   const handleApplyClick = async () => {
     try {
-      const { authenticated } = await authApi.isAuthenticated();
-      if (!authenticated) {
+      console.log('Starting authentication check...');
+      // First check authentication
+      let authResponse;
+      try {
+        authResponse = await authApi.isAuthenticated();
+        console.log('Auth response:', authResponse);
+      } catch (error) {
+        console.error('Authentication check failed:', error);
         alert('로그인 이후 이용해주세요.');
         navigate('/login', { state: { from: location.pathname } });
         return;
       }
-      setIsModalOpen(true);
+
+      // If not authenticated or no user data, redirect to login
+      if (!authResponse?.authenticated || !authResponse?.user) {
+        console.log('Not authenticated or no user:', authResponse);
+        alert('로그인 이후 이용해주세요.');
+        navigate('/login', { state: { from: location.pathname } });
+        return;
+      }
+
+      // If authenticated, check required info
+      try {
+        const user = await authApi.getCurrentUser();
+        console.log('Current user:', user);
+        const hasRequiredInfo = !!(
+          // Account info (name and phone)
+          user?.name && user?.phoneNumber && user?.lineId &&
+          // Bank info (either bank account or PayPal)
+          (user?.accountNumber || user?.paypalEmail) &&
+          // SNS accounts
+          user?.linkedAccounts && user.linkedAccounts.length > 0
+        );
+
+        if (hasRequiredInfo) {
+          alert('次のページへ進みます！');
+          // TODO: Navigate to next page
+        } else {
+          setIsModalOpen(true);
+        }
+      } catch (error) {
+        console.error('Failed to get user data:', error);
+        alert('로그인 이후 이용해주세요.');
+        navigate('/login', { state: { from: location.pathname } });
+      }
     } catch (error) {
-      console.error('Authentication check failed:', error);
-      alert('로그인 이후 이용해주세요.');
-      navigate('/login', { state: { from: location.pathname } });
+      console.error('Error in handleApplyClick:', error);
+      alert('エラーが発生しました。もう一度お試しください。');
     }
   };
 

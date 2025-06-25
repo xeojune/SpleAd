@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router';
 import styled from 'styled-components';
+import { authApi } from '../../../apis/masterAuth';
 
 const Form = styled.form`
   display: flex;
@@ -65,6 +67,7 @@ const NoticeText = styled.span`
 `;
 
 const EditPaypalForm: React.FC = () => {
+  const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [isFormComplete, setIsFormComplete] = useState(false);
 
@@ -72,10 +75,34 @@ const EditPaypalForm: React.FC = () => {
     setIsFormComplete(email.trim() !== '');
   }, [email]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!isFormComplete) return;
-    console.log('PayPal email submitted:', email);
+    
+    try {
+      console.log('Submitting PayPal email:', email);
+      const response = await authApi.updateUser({
+        // Clear all bank info
+        accountHolderLastKana: '',
+        accountHolderFirstKana: '',
+        bankName: '',  // This is critical as it's used as the check in MyBankPage
+        branchCode: '',
+        accountType: '',
+        accountNumber: '',
+        accountPostalCode: '',
+        accountAddress: '',
+        accountPhone: '',
+        // Set PayPal email
+        paypalEmail: email.trim()
+      });
+      console.log('PayPal update response:', response);
+
+      // Make sure we wait for the update to complete before navigating
+      await new Promise(resolve => setTimeout(resolve, 100));
+      navigate('/profile/my-bank');
+    } catch (error) {
+      console.error('Failed to update PayPal information:', error);
+    }
   };
 
   return (

@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import styled from 'styled-components';
+import { authApi } from '../../../apis/masterAuth';
+import { useNavigate } from 'react-router';
 
 const FormContainer = styled.form`
   display: flex;
@@ -76,6 +78,7 @@ interface FormErrors {
 }
 
 const EditPasswordForm: React.FC = () => {
+  const navigate = useNavigate();
   const [formData, setFormData] = useState<FormData>({
     currentPassword: '',
     newPassword: '',
@@ -96,7 +99,7 @@ const EditPasswordForm: React.FC = () => {
       newErrors.newPassword = '新しいパスワードを入力してください。';
     } else if (formData.newPassword.length < 8) {
       newErrors.newPassword = 'パスワードは8文字以上で入力してください。';
-    } else if (!/^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$/.test(formData.newPassword)) {
+    } else if (!/^(?=.*[A-Za-z])(?=.*\d)[\w\W]{8,}$/.test(formData.newPassword)) {
       newErrors.newPassword = '半角英数字を組み合わせて入力してください。';
     }
 
@@ -134,24 +137,33 @@ const EditPasswordForm: React.FC = () => {
 
     try {
       setIsSubmitting(true);
-      // TODO: Add API call to update password
-      console.log('Password update successful');
+      await authApi.updatePassword(formData.currentPassword, formData.newPassword);
+      alert('パスワードを変更しました。');
+      navigate('/profile');
     } catch (error) {
       console.error('Failed to update password:', error);
-      setErrors(prev => ({
-        ...prev,
-        currentPassword: 'パスワードの更新に失敗しました。'
-      }));
+      if (error instanceof Error) {
+        setErrors(prev => ({
+          ...prev,
+          currentPassword: error.message
+        }));
+      } else {
+        setErrors(prev => ({
+          ...prev,
+          currentPassword: 'パスワードの更新に失敗しました。'
+        }));
+      }
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const isFormValid = 
+  const isFormValid = !!(
     formData.currentPassword &&
     formData.newPassword &&
     formData.confirmPassword &&
-    Object.keys(errors).length === 0;
+    Object.keys(errors).length === 0
+  );
 
   return (
     <FormContainer onSubmit={handleSubmit}>

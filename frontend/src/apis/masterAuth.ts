@@ -10,36 +10,35 @@ const api = axios.create({
 
 // No need for token interceptor since we're using cookies
 
-interface LoginResponse {
+export interface LoginResponse {
   user: {
-    id?: string;  // For backward compatibility
-    _id: string;  // From MongoDB
+    id?: string;
+    _id: string;
     email: string;
     name: string;
     firstNameKana: string;
     lastNameKana: string;
-    phoneNumber?: string;  // Added phone number as optional
-    lineId?: string;  // to be added
-    recipientName?: string; //to be added
-    recipientNameKana?: string; //too be added
-    recipientPhoneNumber?: string; //to be added
-    accountNumber?: string; //to be added
-    postCode?: string;  // Added postcode field
-    address?: string;   // Added address field
+    phoneNumber?: string;
+    lineId?: string; // Matches backend schema
+    accountHolderLastKana?: string;
+    accountHolderFirstKana?: string;
+    postCode?: string;
+    address?: string;
+    bankName?: string;
+    branchCode?: string;
+    accountType?: string;
+    accountNumber?: string;
+    accountPostalCode?: string;
+    accountAddress?: string;
+    accountPhone?: string;
+    paypalEmail?: string;
     hasCompletedSnsSetup: boolean;
     linkedAccounts: Array<{
-      platform: string;
-      username: string;
-      profilePictureUrl: string;
-      isConnected: boolean;
-      followersCount: number;
-      followsCount: number;
-      mediaCount?: number;
-      tweetCount?: number;
-      videoCount?: number;
-      lastUpdated: Date;
+      type: string;
+      email?: string;
+      username?: string;
     }>;
-  };
+  }
   token: string;
 }
 
@@ -67,6 +66,7 @@ interface AuthApi {
   deleteAccount(): Promise<void>;
   checkEmailAvailability(email: string): Promise<{ available: boolean }>;
   updateUser(data: Partial<LoginResponse['user']>): Promise<LoginResponse['user']>;
+  updatePassword(currentPassword: string, newPassword: string): Promise<{ success: boolean; message: string }>;
 }
 
 export const authApi: AuthApi = {
@@ -227,6 +227,22 @@ export const authApi: AuthApi = {
       return response.data;
     } catch (error) {
       console.error('Update user failed:', error);
+      throw error;
+    }
+  },
+
+  async updatePassword(currentPassword: string, newPassword: string): Promise<{ success: boolean; message: string }> {
+    try {
+      const response = await api.patch<{ success: boolean; message: string }>(
+        '/auth/password',
+        { currentPassword, newPassword },
+        { withCredentials: true }
+      );
+      return response.data;
+    } catch (error) {
+      if (axios.isAxiosError(error) && error.response?.status === 401) {
+        throw new Error('現在のパスワードが正しくありません。');
+      }
       throw error;
     }
   }

@@ -4,13 +4,14 @@ import { useNavigate } from 'react-router';
 
 interface BankInfoProps {
   bankName: string;
-  accountHolder: string;
+  accountHolderLastKana: string;
+  accountHolderFirstKana: string;
   branchCode: string;
   accountType: string;
   accountNumber: string;
-  postalCode: string;
-  address: string;
-  phoneNumber: string;
+  accountPostalCode: string;
+  accountAddress: string;
+  accountPhone: string;
   onDelete?: () => void;
 }
 
@@ -73,13 +74,14 @@ const StyledButton = styled.button<{ variant: 'primary' | 'delete' }>`
 
 const BankInfoCard: React.FC<BankInfoProps> = ({
   bankName,
-  accountHolder,
+  accountHolderLastKana,
+  accountHolderFirstKana,
   branchCode,
   accountType,
   accountNumber,
-  postalCode,
-  address,
-  phoneNumber,
+  accountPostalCode,
+  accountAddress,
+  accountPhone,
   onDelete
 }) => {
   const navigate = useNavigate();
@@ -92,19 +94,19 @@ const BankInfoCard: React.FC<BankInfoProps> = ({
     <Card>
       <Title>銀行振込</Title>
       <InfoRow>
-        <Value>{accountHolder}</Value>
+        <Value>{accountHolderLastKana} {accountHolderFirstKana}</Value>
       </InfoRow>
       <InfoRow hasMargin>
         <Value>{bankName} {branchCode} {accountType} {accountNumber}</Value>
       </InfoRow>
       <InfoRow>
-        <Value style={{ fontSize: '0.75rem', color: '#535F7B' }}>{postalCode}</Value>
+        <Value style={{ fontSize: '0.75rem', color: '#535F7B' }}>{accountPostalCode}</Value>
       </InfoRow>
       <InfoRow>
-        <Value style={{ fontSize: '0.75rem', color: '#535F7B' }}>{address}</Value>
+        <Value style={{ fontSize: '0.75rem', color: '#535F7B' }}>{accountAddress}</Value>
       </InfoRow>
       <InfoRow>
-        <Value style={{ fontSize: '0.75rem', color: '#535F7B' }}>{phoneNumber}</Value>
+        <Value style={{ fontSize: '0.75rem', color: '#535F7B' }}>{accountPhone}</Value>
       </InfoRow>
       <ButtonContainer>
         <StyledButton variant="primary" onClick={handleEdit}>

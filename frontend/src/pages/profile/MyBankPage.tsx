@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import styled from 'styled-components';
 import { useNavigate } from 'react-router';
 import BankInfoCard from '../../components/profile/MyBank/BankInfoCard';
 import PaypalInfoCard from '../../components/profile/MyBank/PaypalInfoCard';
 import ArrowIcon from '../../components/icons/ArrowIcon';
+import { authApi } from '../../apis/masterAuth';
 
 const PageContainer = styled.div`
   max-width: 1200px;
@@ -45,39 +46,120 @@ const BankInfoCardContainer = styled.div`
   padding: 1.5rem;
 `;
 
+const EmptyStateContainer = styled.div`
+  text-align: center;
+  padding: 2rem;
+  color: #64748b;
+`;
+
+const AddPaymentButton = styled.button`
+  margin-top: 1rem;
+  padding: 0.5rem 1rem;
+  background-color: #1976d2;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  &:hover {
+    background-color: #1565c0;
+  }
+`;
+
+interface BankInfo {
+  accountHolderLastKana: string;
+  accountHolderFirstKana: string;
+  bankName: string;
+  branchCode: string;
+  accountType: string;
+  accountNumber: string;
+  accountPostalCode: string;
+  accountAddress: string;
+  accountPhone: string;
+}
+
+interface PaypalInfo {
+  email: string;
+}
+
 const MyBankPage: React.FC = () => {
   const navigate = useNavigate();
+  const [bankInfo, setBankInfo] = useState<BankInfo | null>(null);
+  const [paypalInfo, setPaypalInfo] = useState<PaypalInfo | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Mock data - replace with actual data from your API
-  const bankInfo = {
-    bankName: 'ここ銀行',
-    accountHolder: 'ひなた ここ',
-    branchCode: '000/〇〇〇',
-    accountType: '普通',
-    accountNumber: '1234567',
-    postalCode: '000-0000',
-    address: '東京都渋谷区神南1-22-7 岩本ビル B1F',
-    phoneNumber: '000-0234-5678'
+  useEffect(() => {
+    const loadUserData = async () => {
+      try {
+        const user = await authApi.getCurrentUser();
+        console.log('Loaded user data:', user);
+        
+        if (user?.bankName) {
+          // If bank info exists, set it and ensure PayPal is null
+          setBankInfo({
+            accountHolderLastKana: user.accountHolderLastKana || '',
+            accountHolderFirstKana: user.accountHolderFirstKana || '',
+            bankName: user.bankName,
+            branchCode: user.branchCode || '',
+            accountType: user.accountType || '',
+            accountNumber: user.accountNumber || '',
+            accountPostalCode: user.accountPostalCode || '',
+            accountAddress: user.accountAddress || '',
+            accountPhone: user.accountPhone || ''
+          });
+          setPaypalInfo(null);
+        } else if (user?.paypalEmail) {
+          // If PayPal email exists, show PayPal info
+          setPaypalInfo({ email: user.paypalEmail });
+          setBankInfo(null);
+        } else {
+          // Neither exists
+          setBankInfo(null);
+          setPaypalInfo(null);
+        }
+      } catch (error) {
+        console.error('Failed to load user data:', error);
+        setBankInfo(null);
+        setPaypalInfo(null);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadUserData();
+  }, []);
+
+  const handleBankDelete = async () => {
+    try {
+      await authApi.updateUser({
+        accountHolderLastKana: '',
+        accountHolderFirstKana: '',
+        bankName: '',
+        branchCode: '',
+        accountType: '',
+        accountNumber: '',
+        accountPostalCode: '',
+        accountAddress: '',
+        accountPhone: ''
+      });
+      setBankInfo(null);
+    } catch (error) {
+      console.error('Failed to delete bank information:', error);
+    }
   };
 
-  const paypalInfo = {
-    email: 'example@email.com'
+  const handlePaypalDelete = async () => {
+    try {
+      await authApi.updateUser({
+        paypalEmail: ''  // Just clear the paypalEmail field
+      });
+      setPaypalInfo(null);
+    } catch (error) {
+      console.error('Failed to delete PayPal information:', error);
+    }
   };
 
-  const handleBankEdit = () => {
-    console.log('Edit bank info');
-  };
-
-  const handleBankDelete = () => {
-    console.log('Delete bank info');
-  };
-
-  const handlePaypalEdit = () => {
-    console.log('Edit paypal info');
-  };
-
-  const handlePaypalDelete = () => {
-    console.log('Delete paypal info');
+  const handleAddPayment = () => {
+    navigate('/profile/edit-bank');
   };
 
   return (
@@ -91,21 +173,34 @@ const MyBankPage: React.FC = () => {
         <PageTitle>振込先口座の管理</PageTitle>
       </Header>
       <BankInfoCardContainer>
-        <BankInfoCard
-          bankName={bankInfo.bankName}
-          accountHolder={bankInfo.accountHolder}
-          branchCode={bankInfo.branchCode}
-          accountType={bankInfo.accountType}
-          accountNumber={bankInfo.accountNumber}
-          postalCode={bankInfo.postalCode}
-          address={bankInfo.address}
-          phoneNumber={bankInfo.phoneNumber}
-          onDelete={handleBankDelete}
-        />
-        <PaypalInfoCard
-          email={paypalInfo.email}
-          onDelete={handlePaypalDelete}
-        />
+        {isLoading ? (
+          <div>Loading...</div>
+        ) : bankInfo ? (
+          <BankInfoCard
+            accountHolderLastKana={bankInfo.accountHolderLastKana}
+            accountHolderFirstKana={bankInfo.accountHolderFirstKana}
+            bankName={bankInfo.bankName}
+            branchCode={bankInfo.branchCode}
+            accountType={bankInfo.accountType}
+            accountNumber={bankInfo.accountNumber}
+            accountPostalCode={bankInfo.accountPostalCode}
+            accountAddress={bankInfo.accountAddress}
+            accountPhone={bankInfo.accountPhone}
+            onDelete={handleBankDelete}
+          />
+        ) : paypalInfo ? (
+          <PaypalInfoCard
+            email={paypalInfo.email}
+            onDelete={handlePaypalDelete}
+          />
+        ) : (
+          <EmptyStateContainer>
+            <div>支払い方法が登録されていません</div>
+            <AddPaymentButton onClick={handleAddPayment}>
+              支払い方法を追加
+            </AddPaymentButton>
+          </EmptyStateContainer>
+        )}
       </BankInfoCardContainer>
     </PageContainer>
   );

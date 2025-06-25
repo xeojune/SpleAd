@@ -117,7 +117,7 @@ const AddressInfo: React.FC = () => {
     <Container>
       <Title>
         お届け先情報
-        <EditButton onClick={() => navigate('/profile/edit-address')}>編集</EditButton>
+        <EditButton onClick={() => navigate('/profile/my-account/edit-address')}>編集</EditButton>
       </Title>
       <FormGroup>
         <Label>お名前（漢字）</Label>

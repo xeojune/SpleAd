@@ -1,5 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
+import { useNavigate } from 'react-router';
 import styled from 'styled-components';
+import { authApi } from '../../../apis/masterAuth';
 
 const Form = styled.form`
   display: flex;
@@ -24,14 +26,14 @@ const Label = styled.label`
 `;
 
 const Input = styled.input`
-  padding: 0.75rem;
-  border: 1px solid #e2e8f0;
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #ddd;
   border-radius: 4px;
-  font-size: 0.875rem;
+  font-size: 16px;
 
-  &:focus {
-    outline: none;
-    border-color: #FF6EA5;
+  &::placeholder {
+    color: #999;
   }
 `;
 
@@ -64,140 +66,260 @@ const NoticeText = styled.span`
   margin-top: 1rem;
 `;
 
+const TabContainer = styled.div`
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1rem;
+`;
+
+const Tab = styled.button<{ active: boolean }>`
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 4px;
+  background-color: ${props => props.active ? '#FF6EA5' : '#e2e8f0'};
+  color: white;
+  cursor: pointer;
+  transition: all 0.2s;
+
+  &:hover {
+    background-color: ${props => props.active ? '#FF6EA5' : '#e2e8f0'};
+  }
+`;
+
+const KanaInputGroup = styled.div`
+  display: flex;
+  gap: 10px;
+`;
+
 interface BankFormData {
-  accountHolder: string;
+  accountHolderLastKana: string;
+  accountHolderFirstKana: string;
   bankName: string;
   branchCode: string;
-  accountNumber: string;
   accountType: string;
-  postalCode: string;
-  address: string;
-  phoneNumber: string;
+  accountNumber: string;
+  accountPostalCode: string;
+  accountAddress: string;
+  accountPhone: string;
 }
 
+interface PaypalFormData {
+  paypalEmail: string;
+}
+
+type PaymentMethod = 'bank' | 'paypal';
+
 const EditBankForm: React.FC = () => {
-  const [formData, setFormData] = useState<BankFormData>({
-    accountHolder: '',
+  const navigate = useNavigate();
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('bank');
+  const [bankFormData, setBankFormData] = useState<BankFormData>({
+    accountHolderLastKana: '',
+    accountHolderFirstKana: '',
     bankName: '',
     branchCode: '',
-    accountNumber: '',
     accountType: '',
-    postalCode: '',
-    address: '',
-    phoneNumber: ''
+    accountNumber: '',
+    accountPostalCode: '',
+    accountAddress: '',
+    accountPhone: ''
+  });
+  const [paypalFormData, setPaypalFormData] = useState<PaypalFormData>({
+    paypalEmail: ''
   });
 
-  const [isFormComplete, setIsFormComplete] = useState(false);
+  const isFormComplete = useMemo(() => {
+    if (paymentMethod === 'bank') {
+      return Object.values(bankFormData).every(value => value.trim() !== '');
+    } else {
+      return paypalFormData.paypalEmail.trim() !== '';
+    }
+  }, [paymentMethod, bankFormData, paypalFormData]);
 
-  useEffect(() => {
-    // Check if all required fields are filled
-    const requiredFields = ['accountHolder', 'bankName', 'branchCode', 'accountNumber', 'accountType', 'postalCode', 'address', 'phoneNumber'];
-    const isComplete = requiredFields.every(field => formData[field as keyof typeof formData].trim() !== '');
-    setIsFormComplete(isComplete);
-  }, [formData]);
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!isFormComplete) return;
-    console.log('Form submitted:', formData);
-  };
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleBankChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
+    setBankFormData(prev => ({
       ...prev,
       [name]: value
     }));
   };
 
+  const handlePaypalChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { value } = e.target;
+    console.log('Setting PayPal email to:', value);
+    setPaypalFormData({ paypalEmail: value });
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!isFormComplete) return;
+    
+    try {
+      if (paymentMethod === 'bank') {
+        // Clear PayPal email and set bank info
+        console.log('Submitting bank info:', bankFormData);
+        const response = await authApi.updateUser({
+          accountHolderLastKana: bankFormData.accountHolderLastKana,
+          accountHolderFirstKana: bankFormData.accountHolderFirstKana,
+          bankName: bankFormData.bankName,
+          branchCode: bankFormData.branchCode,
+          accountType: bankFormData.accountType,
+          accountNumber: bankFormData.accountNumber,
+          accountPostalCode: bankFormData.accountPostalCode,
+          accountAddress: bankFormData.accountAddress,
+          accountPhone: bankFormData.accountPhone,
+          paypalEmail: ''  // Clear PayPal
+        });
+        console.log('Bank update response:', response);
+      } else {
+        // Clear bank info and set PayPal
+        console.log('Submitting PayPal info:', paypalFormData);
+        if (!paypalFormData.paypalEmail.trim()) {
+          console.error('PayPal email is empty');
+          return;
+        }
+
+        const response = await authApi.updateUser({
+          accountHolderLastKana: '',
+          accountHolderFirstKana: '',
+          bankName: '',  // This is critical as it's used as the check in MyBankPage
+          branchCode: '',
+          accountType: '',
+          accountNumber: '',
+          accountPostalCode: '',
+          accountAddress: '',
+          accountPhone: '',
+          paypalEmail: paypalFormData.paypalEmail.trim()
+        });
+        console.log('PayPal update response:', response);
+      }
+
+      // Make sure we wait for the update to complete before navigating
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      // Verify the update worked
+      const updatedUser = await authApi.getCurrentUser();
+      console.log('Updated user data:', updatedUser);
+      
+      navigate('/profile/my-bank');
+    } catch (error) {
+      console.error('Failed to update payment information:', error);
+    }
+  };
+
   return (
     <Form onSubmit={handleSubmit}>
-      <FormGroup>
-        <Label>預金名義</Label>
-        <Input
-          type="text"
-          name="accountHolder"
-          value={formData.accountHolder}
-          onChange={handleChange}
-          placeholder="例：ヤマダタロウ"
-        />
-      </FormGroup>
-      <FormGroup>
-        <Label>銀行名</Label>
-        <Input
-          type="text"
-          name="bankName"
-          value={formData.bankName}
-          onChange={handleChange}
-          placeholder="例：みずほ銀行"
-        />
-      </FormGroup>
-      <FormGroup>
-        <Label>支店コード</Label>
-        <Input
-          type="text"
-          name="branchCode"
-          value={formData.branchCode}
-          onChange={handleChange}
-          placeholder="例：001"
-        />
-      </FormGroup>
-      <FormGroup>
-        <Label>口座番号</Label>
-        <Input
-          type="text"
-          name="accountNumber"
-          value={formData.accountNumber}
-          onChange={handleChange}
-          placeholder="例：1234567"
-        />
-      </FormGroup>
-      <FormGroup>
-        <Label>口座種別</Label>
-        <Input
-          type="text"
-          name="accountType"
-          value={formData.accountType}
-          onChange={handleChange}
-          placeholder="例：普通"
-        />
-      </FormGroup>
-      <FormGroup>
-        <Label>郵便番号</Label>
-        <Input
-          type="text"
-          name="postalCode"
-          value={formData.postalCode}
-          onChange={handleChange}
-          placeholder="例：123-4567"
-        />
-      </FormGroup>
-      <FormGroup>
-        <Label>住所</Label>
-        <Input
-          type="text"
-          name="address"
-          value={formData.address}
-          onChange={handleChange}
-          placeholder="例：東京都渋谷区渋谷1-1-1"
-        />
-      </FormGroup>
-      <FormGroup>
-        <Label>電話番号</Label>
-        <Input
-          type="text"
-          name="phoneNumber"
-          value={formData.phoneNumber}
-          onChange={handleChange}
-          placeholder="例：03-1234-5678"
-        />
-      </FormGroup>
+      {paymentMethod === 'bank' ? (
+        <>
+          <FormGroup>
+            <Label>口座名義（フリガナ）</Label>
+            <KanaInputGroup>
+              <Input
+                type="text"
+                name="accountHolderLastKana"
+                value={bankFormData.accountHolderLastKana}
+                onChange={handleBankChange}
+                placeholder="セイ"
+              />
+              <Input
+                type="text"
+                name="accountHolderFirstKana"
+                value={bankFormData.accountHolderFirstKana}
+                onChange={handleBankChange}
+                placeholder="メイ"
+              />
+            </KanaInputGroup>
+          </FormGroup>
+          <FormGroup>
+            <Label>銀行名</Label>
+            <Input
+              type="text"
+              name="bankName"
+              value={bankFormData.bankName}
+              onChange={handleBankChange}
+              placeholder="例：みずほ銀行"
+            />
+          </FormGroup>
+          <FormGroup>
+            <Label>支店コード</Label>
+            <Input
+              type="text"
+              name="branchCode"
+              value={bankFormData.branchCode}
+              onChange={handleBankChange}
+              placeholder="例：001"
+            />
+          </FormGroup>
+          <FormGroup>
+            <Label>口座種別</Label>
+            <Input
+              type="text"
+              name="accountType"
+              value={bankFormData.accountType}
+              onChange={handleBankChange}
+              placeholder="例：普通"
+            />
+          </FormGroup>
+          <FormGroup>
+            <Label>口座番号</Label>
+            <Input
+              type="text"
+              name="accountNumber"
+              value={bankFormData.accountNumber}
+              onChange={handleBankChange}
+              placeholder="例：1234567"
+            />
+          </FormGroup>
+          <FormGroup>
+            <Label>郵便番号</Label>
+            <Input
+              type="text"
+              name="accountPostalCode"
+              value={bankFormData.accountPostalCode}
+              onChange={handleBankChange}
+              placeholder="例：123-4567"
+            />
+          </FormGroup>
+          <FormGroup>
+            <Label>住所</Label>
+            <Input
+              type="text"
+              name="accountAddress"
+              value={bankFormData.accountAddress}
+              onChange={handleBankChange}
+              placeholder="例：東京都渋谷区..."
+            />
+          </FormGroup>
+          <FormGroup>
+            <Label>電話番号</Label>
+            <Input
+              type="text"
+              name="accountPhone"
+              value={bankFormData.accountPhone}
+              onChange={handleBankChange}
+              placeholder="例：03-1234-5678"
+            />
+          </FormGroup>
+        </>
+      ) : (
+        <FormGroup>
+          <Label>PayPalメールアドレス</Label>
+          <Input
+            type="email"
+            name="paypalEmail"
+            value={paypalFormData.paypalEmail}
+            onChange={handlePaypalChange}
+            placeholder="example@email.com"
+          />
+        </FormGroup>
+      )}
+
       <NoticeText>
         ※ 上記の情報は、海外送金のため銀行で必須となっております。ご理解とご協力のほど、よろしくお願いいたします。
       </NoticeText>
       <NoticeText>
-        ※ 海外送金の場合、入金完了から着金までに1～2週間ほどかかる場合がございます。予めご了承くださいませ。
+        ※ 海外送金の場合、入金完了から着金までに1週間程度かかる場合がございます。
       </NoticeText>
+
       <ButtonContainer>
         <SubmitButton type="submit" disabled={!isFormComplete}>
           保存する
