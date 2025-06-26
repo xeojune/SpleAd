@@ -17,7 +17,7 @@ const ContentContainer = styled.div`
 
 interface CampaignData {
   image: string;
-  title: string;
+  productName: string;
   description: string;
   platforms: string[];
   brand: string;
@@ -25,6 +25,10 @@ interface CampaignData {
   announcementDate: string;
   participantCount: string;
   postPeriod: string;
+  campaignBadges: string[];
+  participationMethod: string[];
+  participationDetails: string;
+  compensation: string;
 }
 
 const DescriptionPage: React.FC = () => {
@@ -37,20 +41,25 @@ const DescriptionPage: React.FC = () => {
 
   return (
     <>
-      <DescriptionHeader productName={campaign.title} />
+      <DescriptionHeader productName={campaign.productName} />
       <ContentContainer>
         <DescriptionBanner
           image={campaign.image}
+          recruitmentPeriod={campaign.recruitmentPeriod}
         />
         <DescriptionInfo
           brand={campaign.brand}
-          productName={campaign.title}
+          productName={campaign.productName}
           description={campaign.description}
           recruitmentPeriod={campaign.recruitmentPeriod}
           announcementDate={campaign.announcementDate}
           participantCount={campaign.participantCount}
           postPeriod={campaign.postPeriod}
           platforms={campaign.platforms}
+          campaignBadges={campaign.campaignBadges}
+          participationMethod={campaign.participationMethod}
+          participationDetails={campaign.participationDetails}
+          compensation={campaign.compensation}
         />
         <ParticipationGuide />
         <VerificationGuide />

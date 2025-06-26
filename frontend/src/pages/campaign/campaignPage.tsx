@@ -1,114 +1,171 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import styled from 'styled-components';
-import DropDownBox from '../../components/DropDownBox';
 import ProductCard from '../../components/dashboard/ProductCard';
 import CheckButtonIcon from '../../components/icons/CheckButtonIcon';
 import productData from '../../test_data/productData.json';
 import { imageMap } from '../../utils/imageMap';
+import { getRecruitmentStatus, type RecruitmentStatus } from '../../utils/dateUtils';
 
 const Container = styled.div`
   padding: 1rem;
 `;
 
-const TopSection = styled.div`
+const TabContainer = styled.div`
   display: flex;
-  gap: 0.5rem;
+  border-bottom: 1px solid #E5E7EB;
   margin-bottom: 1rem;
+`;
+
+const Tab = styled.button<{ $active: boolean }>`
+  padding: 0.75rem 1rem;
+  border: none;
+  width: 100%;
+  background: transparent;
+  font-size: 1rem;
+  color: ${props => props.$active ? '#000' : '#6B7280'};
+  position: relative;
+  cursor: pointer;
+
+  &::after {
+    content: '';
+    position: absolute;
+    bottom: -1px;
+    left: 0;
+    width: 100%;
+    height: 2px;
+    background-color: ${props => props.$active ? '#FF6EA5' : 'transparent'};
+  }
 `;
 
 const FilterSection = styled.div`
   display: flex;
-  justify-content: space-between;
-  align-items: center;
   margin-bottom: 1rem;
+  padding: 0 0.5rem;
 `;
 
-const FilterButtons = styled.div`
-  display: flex;
-  gap: 1rem;
-`;
-
-const FilterButton = styled.button<{ $active?: boolean }>`
+const FilterButton = styled.button<{ $active: boolean }>`
   display: flex;
   align-items: center;
   gap: 0.25rem;
-  border-radius: 1.25rem;
+  padding: 0.5rem 0.5rem;
   border: none;
   background: transparent;
   color: ${props => props.$active ? '#FF6EA5' : '#6B7280'};
   font-size: 0.875rem;
   cursor: pointer;
+  transition: all 0.2s ease;
+`;
+
+const CampaignDescription = styled.div`
+  background-color: #FFF1F5;
+  color: #FF6EA5;
+  padding: 1rem;
+  margin: 0 0.5rem 1.5rem 0.5rem;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  line-height: 1.5;
 `;
 
 const CampaignGrid = styled.div`
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 1rem;
+  padding: 0 0.5rem;
 `;
 
 const CampaignPage: React.FC = () => {
-  const [activeFilter, setActiveFilter] = useState<'upcoming' | 'open'>('open');
-  const [campaignDropdownOpen, setCampaignDropdownOpen] = useState(false);
-  const [monitorDropdownOpen, setMonitorDropdownOpen] = useState(false);
-  const [sortDropdownOpen, setSortDropdownOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState<'モニター' | '購入' | 'レビュー'>('モニター');
+  const [selectedFilters, setSelectedFilters] = useState<RecruitmentStatus[]>([]);
+
+  const handleFilterClick = (filter: RecruitmentStatus) => {
+    setSelectedFilters(prev => {
+      if (prev.includes(filter)) {
+        return prev.filter(f => f !== filter);
+      } else {
+        return [...prev, filter];
+      }
+    });
+  };
+
+  const filteredCampaigns = useMemo(() => {
+    let campaigns = productData.campaigns.filter(campaign => campaign.type === activeTab);
+    
+    if (selectedFilters.length === 0) {
+      return campaigns;
+    }
+    
+    return campaigns.filter(campaign => {
+      const status = getRecruitmentStatus(campaign.recruitmentPeriod);
+      return selectedFilters.includes(status);
+    });
+  }, [selectedFilters, activeTab]);
 
   return (
     <Container>
-      <TopSection>
-        <DropDownBox 
-          label="キャンペーン" 
-          isOpen={campaignDropdownOpen}
-          onClick={() => setCampaignDropdownOpen(!campaignDropdownOpen)}
-        />
-        <DropDownBox 
-          label="モニター" 
-          isOpen={monitorDropdownOpen}
-          onClick={() => setMonitorDropdownOpen(!monitorDropdownOpen)}
-          width="6rem"
-        />
-      </TopSection>
+      <TabContainer>
+        <Tab 
+          $active={activeTab === 'モニター'} 
+          onClick={() => setActiveTab('モニター')}
+        >
+          モニター
+        </Tab>
+        <Tab 
+          $active={activeTab === '購入'} 
+          onClick={() => setActiveTab('購入')}
+        >
+          購入
+        </Tab>
+        <Tab 
+          $active={activeTab === 'レビュー'} 
+          onClick={() => setActiveTab('レビュー')}
+        >
+          レビュー
+        </Tab>
+      </TabContainer>
 
       <FilterSection>
-        <FilterButtons>
-          <FilterButton 
-            $active={activeFilter === 'upcoming'}
-            onClick={() => setActiveFilter('upcoming')}
-          >
-            <CheckButtonIcon active={activeFilter === 'upcoming'} />
-            先着順
-          </FilterButton>
-          <FilterButton 
-            $active={activeFilter === 'open'}
-            onClick={() => setActiveFilter('open')}
-          >
-            <CheckButtonIcon active={activeFilter === 'open'} />
-            オープン予定
-          </FilterButton>
-        </FilterButtons>
-
-        <DropDownBox 
-          label="最新順" 
-          isOpen={sortDropdownOpen}
-          onClick={() => setSortDropdownOpen(!sortDropdownOpen)}
-          noBorder
-          width="6rem"
-        />
+        <FilterButton 
+          $active={selectedFilters.includes('募集中')}
+          onClick={() => handleFilterClick('募集中')}
+        >
+          <CheckButtonIcon active={selectedFilters.includes('募集中')} />
+          募集中
+        </FilterButton>
+        <FilterButton 
+          $active={selectedFilters.includes('オープン予定')}
+          onClick={() => handleFilterClick('オープン予定')}
+        >
+          <CheckButtonIcon active={selectedFilters.includes('オープン予定')} />
+          オープン予定
+        </FilterButton>
+        <FilterButton 
+          $active={selectedFilters.includes('募集終了')}
+          onClick={() => handleFilterClick('募集終了')}
+        >
+          <CheckButtonIcon active={selectedFilters.includes('募集終了')} />
+          募集終了
+        </FilterButton>
       </FilterSection>
 
       <CampaignGrid>
-        {(productData.campaigns as any[]).map((campaign: any) => (
+        {filteredCampaigns.map((campaign) => (
           <ProductCard
             key={campaign.id}
             image={imageMap[campaign.image]}
-            brand={campaign.brand}
             title={campaign.title}
             description={campaign.description}
             platforms={campaign.platforms}
-            metrics={campaign.metrics}
+            brand={campaign.brand}
+            type={campaign.type}
+            campaignBadges={campaign.campaignBadges}
+            productName={campaign.productName}
             recruitmentPeriod={campaign.recruitmentPeriod}
             announcementDate={campaign.announcementDate}
             participantCount={campaign.participantCount}
+            participationMethod={campaign.participationMethod}
+            participationDetails={campaign.participationDetails}
             postPeriod={campaign.postPeriod}
+            compensation={campaign.compensation}
           />
         ))}
       </CampaignGrid>

@@ -7,7 +7,7 @@ import CampaignApplyModal from './CampaignApplyModal';
 const Container = styled.div`
   display: flex;
   gap: 1rem;
-  padding: 2rem 0 2rem 0;
+  padding: 2rem 1rem;
 `;
 
 const Button = styled.button<{ variant: 'outline' | 'filled' }>`
@@ -106,10 +106,10 @@ export const DescriptionFooter: React.FC = () => {
     <>
       <Container>
         <Button variant="outline">
-          <ButtonText>제품 바로가기</ButtonText>
+          <ButtonText>商品ページへ</ButtonText>
         </Button>
         <Button variant="filled" onClick={handleApplyClick}>
-          <ButtonText>申し込みする</ButtonText>
+          <ButtonText>申し込む</ButtonText>
         </Button>
       </Container>
       <CampaignApplyModal 

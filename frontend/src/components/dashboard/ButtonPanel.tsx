@@ -3,7 +3,7 @@ import { useLocation, useNavigate } from 'react-router';
 import { ButtonPanelContainer, NavButton } from '../../styles/dashboard/ButtonPanel.styles';
 import HomeIcon from '../icons/HomeIcon';
 import CampaignIcon from '../icons/CampaignIcon';
-import SearchIcon from '../icons/SearchIcon';
+import HeartIcon from '../icons/HeartIcon';
 import ProfileIcon from '../icons/ProfileIcon';
 
 const ButtonPanel: React.FC = () => {
@@ -31,7 +31,7 @@ const ButtonPanel: React.FC = () => {
         <p>キャンペーン</p>
       </NavButton>
       <NavButton active={isSearch} onClick={() => navigate('/dashboard/search')} aria-label="Search">
-        <SearchIcon width="2.1875rem" height="2.1875rem" active={isSearch} />
+        <HeartIcon width="2.1875rem" height="2.1875rem" active={isSearch} />
         <p>検索</p>
       </NavButton>
       <NavButton active={isProfile} onClick={handleProfileClick} aria-label="Profile">

@@ -51,7 +51,7 @@ export const isDateInRange = (periodStr: string): boolean => {
   }
 };
 
-export type RecruitmentStatus = '募集予定' | '募集中' | '募集終了';
+export type RecruitmentStatus = 'オープン予定' | '募集中' | '募集終了';
 
 /**
  * Check recruitment status based on date range
@@ -74,7 +74,7 @@ export const getRecruitmentStatus = (periodStr: string): RecruitmentStatus => {
     });
 
     if (now < startDate) {
-      return '募集予定';
+      return 'オープン予定';
     } else if (now > endDate) {
       return '募集終了';
     } else {

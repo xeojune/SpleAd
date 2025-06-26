@@ -19,8 +19,8 @@ export const Card = styled.div`
 `;
 
 export const CardImage = styled.img`
-  width: 10rem;
-  height: 10rem;
+  width: 100%;
+  height: 100%;
   object-fit: cover;
   border-radius: 0.75rem;
   
@@ -136,4 +136,58 @@ export const Metric = styled.span`
     font-size: 0.625rem;
     padding: 0.25rem 0.375rem;
   }
+`;
+
+export const ImageContainer = styled.div<{ isEnded?: boolean }>`
+  position: relative;
+  width: 10rem;
+  height: 10rem;
+  
+  @media screen and (max-width: 48rem) {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 1;
+  }
+  
+  ${props => props.isEnded && `
+    &::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.4);
+      border-radius: 0.75rem;
+    }
+  `}
+`;
+
+export const StatusTag = styled.div<{ status?: string }>`
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  padding: 0.35rem 0.5rem;
+  background-color: ${props => props.status === '募集終了' ? '#FFFFFF' : '#FF6EA5'};
+  color: ${props => props.status === '募集終了' ? '#6B7280' : '#FFFFFF'};
+  border-radius: 0.35rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  z-index: 1;
+  
+  ${props => props.status === '募集終了' ? `
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-weight: 600;
+    min-width: 6rem;
+    padding: 0.35rem 0.5rem;
+    
+  ` : `
+    top: 0.75rem;
+    left: 0.75rem;
+
+  `}
 `;

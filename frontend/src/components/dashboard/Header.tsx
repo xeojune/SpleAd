@@ -2,8 +2,8 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router';
 import { HeaderContainer, Logo, HeaderActions, MenuButton, DropdownMenu, MenuItem } from '../../styles/dashboard/Header.styles';
 import logo from '../../assets/logo.png';
-import MenuIcon from '../icons/MenuIcon';
 import LogoutIcon from '../icons/LogoutIcon';
+import SearchIcon from '../icons/SearchIcon';
 import { authApi } from '../../apis/masterAuth';
 
 const Header: React.FC = () => {
@@ -39,7 +39,7 @@ const Header: React.FC = () => {
       <Logo src={logo} alt="SpleAd Logo" />
       <HeaderActions ref={menuRef}>
         <MenuButton onClick={() => setIsMenuOpen(!isMenuOpen)}>
-          <MenuIcon />
+          <SearchIcon />
         </MenuButton>
         <DropdownMenu isOpen={isMenuOpen}>
           <MenuItem onClick={handleLogout}>

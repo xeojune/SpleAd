@@ -39,7 +39,7 @@ const DescriptionHeader: React.FC<DescriptionHeaderProps> = ({ productName }) =>
           <path d="M15 18L9 12L15 6" stroke="#1E293B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
         </svg>
       </BackButton>
-      <ProductName>{productName}</ProductName>
+      <ProductName>{Array.isArray(productName) ? productName.join(',') : productName}</ProductName>
     </HeaderContainer>
   );
 };
