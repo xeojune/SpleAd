@@ -4,6 +4,9 @@ import styled from 'styled-components';
 import ProductCard from '../../components/dashboard/ProductCard';
 import { imageMap } from '../../utils/imageMap';
 import productData from '../../test_data/productData.json';
+import purchaseData from '../../test_data/purchaseData.json';
+import reviewData from '../../test_data/reviewData.json';
+import { useNavigate } from 'react-router';
 
 const SectionHeader = styled.div`
   display: flex;
@@ -77,18 +80,25 @@ const ProductWrapper = styled.div`
 `;
 
 const HomePage: React.FC = () => {
-    const campaigns = productData.campaigns;
+    const monitor = productData.campaigns;
+    const purchase = purchaseData.campaigns;
+    const review = reviewData.reviewCampaigns;
+    const navigate = useNavigate();
+
+    const handleViewAll = (campaignType: string) => {
+        navigate('/dashboard/campaign', { state: { currentTab: campaignType } });
+    };
 
     return (
         <>
             <Banner />
             <SectionHeader>
                 <SectionTitle>新着モニターキャンペーン</SectionTitle>
-                <ViewAllButton>すべて見る</ViewAllButton>
+                <ViewAllButton onClick={() => handleViewAll('モニター')}>すべて見る</ViewAllButton>
             </SectionHeader>
             <ProductListContainer>
                 <ProductList>
-                    {campaigns
+                    {monitor
                         .filter(campaign => campaign.type === 'モニター')
                         .map((campaign) => (
                             <ProductWrapper key={campaign.id}>
@@ -116,11 +126,11 @@ const HomePage: React.FC = () => {
 
             <SectionHeader>
                 <SectionTitle>新着購入キャンペーン</SectionTitle>
-                <ViewAllButton>すべて見る</ViewAllButton>
+                <ViewAllButton onClick={() => handleViewAll('購入')}>すべて見る</ViewAllButton>
             </SectionHeader>
             <ProductListContainer>
                 <ProductList>
-                    {campaigns
+                    {purchase
                         .filter(campaign => campaign.type === '購入')
                         .map((campaign) => (
                             <ProductWrapper key={`purchase-${campaign.id}`}>
@@ -136,9 +146,8 @@ const HomePage: React.FC = () => {
                                     recruitmentPeriod={campaign.recruitmentPeriod}
                                     announcementDate={campaign.announcementDate}
                                     participantCount={campaign.participantCount}
-                                    participationMethod={campaign.participationMethod}
                                     participationDetails={campaign.participationDetails}
-                                    postPeriod={campaign.postPeriod}
+                                    purchaseTime={campaign.purchaseTime}
                                     compensation={campaign.compensation}
                                 />
                             </ProductWrapper>
@@ -148,11 +157,11 @@ const HomePage: React.FC = () => {
 
             <SectionHeader>
                 <SectionTitle>新着レビューキャンペーン</SectionTitle>
-                <ViewAllButton>すべて見る</ViewAllButton>
+                <ViewAllButton onClick={() => handleViewAll('レビュー')}>すべて見る</ViewAllButton>
             </SectionHeader>
             <ProductListContainer>
                 <ProductList>
-                    {campaigns
+                    {review
                         .filter(campaign => campaign.type === 'レビュー')
                         .map((campaign) => (
                             <ProductWrapper key={`review-${campaign.id}`}>
@@ -168,8 +177,8 @@ const HomePage: React.FC = () => {
                                     recruitmentPeriod={campaign.recruitmentPeriod}
                                     announcementDate={campaign.announcementDate}
                                     participantCount={campaign.participantCount}
-                                    participationMethod={campaign.participationMethod}
-                                    participationDetails={campaign.participationDetails}
+                                    purchaseTime={campaign.purchaseTime}
+                                    reviewReqs={campaign.reviewReqs}
                                     postPeriod={campaign.postPeriod}
                                     compensation={campaign.compensation}
                                 />

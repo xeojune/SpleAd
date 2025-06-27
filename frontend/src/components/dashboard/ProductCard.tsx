@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router';
 import styled from 'styled-components';
 import ClockIcon from '../icons/ClockIcon';
 import { getRecruitmentStatus } from '../../utils/dateUtils';
+import { useSearch } from '../../contexts/SearchContext';
 import { Card, ImageContainer, CardImage, StatusTag, CardContent, TagContainer, Tag } from '../../styles/dashboard/ProductCard.styles';
 
 const CardTitle = styled.h3`
@@ -87,10 +88,29 @@ const ProductCard: React.FC<ProductCardProps> = ({
   reviewReqs
 }) => {
   const navigate = useNavigate();
+  const { searchQuery } = useSearch();
   const status = recruitmentPeriod ? getRecruitmentStatus(recruitmentPeriod) : null;
 
+  const matchesSearch = () => {
+    if (!searchQuery) return true;
+    
+    const query = searchQuery.toLowerCase();
+    const brandMatch = brand.toLowerCase().includes(query);
+    const descriptionMatch = Array.isArray(description)
+      ? description.some(desc => desc.toLowerCase().includes(query))
+      : description.toLowerCase().includes(query);
+    
+    return brandMatch || descriptionMatch;
+  };
+
+  if (!matchesSearch()) return null;
+
   const handleClick = () => {
-    navigate('/description', {
+    // Create URL-safe versions of brand and title
+    const urlSafeBrand = encodeURIComponent(brand);
+    const urlSafeTitle = encodeURIComponent(title);
+
+    navigate(`/dashboard/campaign/${urlSafeBrand}/${urlSafeTitle}`, {
       state: {
         image,
         brand,
@@ -108,10 +128,10 @@ const ProductCard: React.FC<ProductCardProps> = ({
         postPeriod,
         purchaseTime,
         compensation,
-        reviewReqs,
         status,
         isPurchase: type === '購入',
-        currentTab: type
+        currentTab: type,
+        reviewReqs
       }
     });
   };

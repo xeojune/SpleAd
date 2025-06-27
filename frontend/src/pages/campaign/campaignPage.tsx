@@ -84,6 +84,10 @@ const CampaignPage: React.FC = () => {
   const [selectedFilters, setSelectedFilters] = useState<RecruitmentStatus[]>([]);
 
   useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []); // Run once when component mounts
+
+  useEffect(() => {
     localStorage.setItem('campaignTab', activeTab);
   }, [activeTab]);
 

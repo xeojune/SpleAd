@@ -19,19 +19,21 @@ import MyBankPage from './pages/profile/MyBankPage';
 import EditBankPage from './pages/profile/EditBankPage';
 import SnsPage from './pages/profile/SnsPage';
 import EditPasswordPage from './pages/profile/EditPasswordPage';
+import ScrollToTop from './components/ScrollToTop'; // Assuming ScrollToTop component is in this location
 
 const App: React.FC = () => {
   return (
     <ThemeProvider theme={theme}>
       <GlobalStyles />
       <Router>
+        <ScrollToTop />
         <Routes>
           {/* Public Routes */}
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/dashboard" element={<DashboardPage><HomePage /></DashboardPage>} />
           <Route path="/dashboard/campaign" element={<DashboardPage><CampaignPage /></DashboardPage>} />
-          <Route path="/description" element={<DashboardPage><DescriptionPage /></DashboardPage>} />
+          <Route path="/dashboard/campaign/:brand/:title" element={<DashboardPage><DescriptionPage /></DashboardPage>} />
           <Route path="/media" element={<DashboardPage><MediaPage /></DashboardPage>} />
           
           {/* Protected Profile Routes */}

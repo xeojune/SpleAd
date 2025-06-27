@@ -2,6 +2,7 @@ import React from 'react';
 import styled from 'styled-components';
 import Header from '../../components/dashboard/Header';
 import ButtonPanel from '../../components/dashboard/ButtonPanel';
+import { SearchProvider } from '../../contexts/SearchContext';
 
 const DashboardContainer = styled.div`
   max-width: 24.5625rem;
@@ -35,13 +36,15 @@ interface DashboardPageProps {
 
 const DashboardPage: React.FC<DashboardPageProps> = ({ children }) => {
   return (
-    <DashboardContainer>
-      <Header />
-      <ContentArea>
-        {children}
-      </ContentArea>
-      <ButtonPanel />
-    </DashboardContainer>
+    <SearchProvider>
+      <DashboardContainer>
+        <Header />
+        <ContentArea>
+          {children}
+        </ContentArea>
+        <ButtonPanel />
+      </DashboardContainer>
+    </SearchProvider>
   );
 };
 
