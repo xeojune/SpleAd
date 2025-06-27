@@ -1,0 +1,55 @@
+{
+  "campaigns": [
+    {
+      "id": "1",
+      "type": "購入",
+      "image": "../assets/coco_campaign_image/purchase/2-1.png",
+      "platforms": ["Qoo10"],
+      "brand": "Arencia",
+      "description": "プレミアムもちソープ「グリーン」120g",
+      "campaignBadges": ["07/01 (水) 22:00~24:00"],
+      "title": "Arencia プレミアムもちソープ「グリーン」購入",
+      "productName": "プレミアムもちソープ「グリーン」120g",
+      "recruitmentPeriod": "2025/07/01 ~ 2025/07/01",
+      "announcementDate": "2025/07/01 17時以後",
+      "participantCount": "100",
+      "participationDetails": "1アカウント1個まで購入可\n(セラムはオプションで、任意でお選びいただけます)",
+      "purchaseTime": "2025/07/01 (水) 22:00~24:00",
+      "compensation": "全額返金"
+    },
+    {
+      "id": "2",
+      "type": "購入",
+      "image": "../assets/coco_campaign_image/purchase/2-2.png",
+      "platforms": ["Qoo10"],
+      "brand": "BONCEPT",
+      "description": "ボンセプト クレイウォッシュ",
+      "campaignBadges": ["06/05 (木) 20:00~22:00"],
+      "title": "BONCEPT クレイウォッシュ購入",
+      "productName": "ボンセプト クレイウォッシュ",
+      "recruitmentPeriod": "2025/06/04 ~ 2025/06/04",
+      "announcementDate": "2025/06/04 17時以後",
+      "participantCount": "50",
+      "participationDetails": "1アカウント1個まで購入可",
+      "purchaseTime": "2025/06/05 (木) 20:00~22:00",
+      "compensation": "全額返金"
+    },
+    {
+      "id": "3",
+      "type": "購入",
+      "image": "../assets/coco_campaign_image/purchase/2-5.png",
+      "platforms": ["Qoo10"],
+      "brand": "Naturalize",
+      "description": "ナチュラライズ UVプロテクトミルク",
+      "campaignBadges": ["06/06 (金) 21:00~23:00"],
+      "title": "Naturalize UVプロテクトミルク購入",
+      "productName": "ナチュラライズ UVプロテクトミルク",
+      "recruitmentPeriod": "2025/06/05 ~ 2025/06/05",
+      "announcementDate": "2025/06/05 17時以後",
+      "participantCount": "75",
+      "participationDetails": "1アカウント1個まで購入可",
+      "purchaseTime": "2025/06/06 (金) 21:00~23:00",
+      "compensation": "全額返金"
+    }
+  ]
+}

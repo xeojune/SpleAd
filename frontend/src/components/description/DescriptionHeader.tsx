@@ -21,15 +21,19 @@ const BackButton = styled.button`
 const ProductName = styled.h1`
   font-size: 1rem;
   font-weight: 600;
-  color: #1e293b;
+  color: #1E293B;
   line-height: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: calc(100% - 10rem); /* Adjust based on back button width */
 `;
 
 interface DescriptionHeaderProps {
-  productName: string;
+  title: string;
 }
 
-const DescriptionHeader: React.FC<DescriptionHeaderProps> = ({ productName }) => {
+const DescriptionHeader: React.FC<DescriptionHeaderProps> = ({ title }) => {
   const navigate = useNavigate();
 
   return (
@@ -39,7 +43,7 @@ const DescriptionHeader: React.FC<DescriptionHeaderProps> = ({ productName }) =>
           <path d="M15 18L9 12L15 6" stroke="#1E293B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
         </svg>
       </BackButton>
-      <ProductName>{Array.isArray(productName) ? productName.join(',') : productName}</ProductName>
+      <ProductName>{title}</ProductName>
     </HeaderContainer>
   );
 };

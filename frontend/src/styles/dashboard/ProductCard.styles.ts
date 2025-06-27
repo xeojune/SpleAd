@@ -90,6 +90,8 @@ export const Tag = styled.span<{ platform: string }>`
         return '#c6ddfc';
       case 'loft':
         return '#fff1c1';
+      case 'qoo10':
+        return '#fee1df';
       default:
         return '#f0f0f0';
     }
@@ -104,6 +106,8 @@ export const Tag = styled.span<{ platform: string }>`
         return '#1e4d9b';
       case 'loft':
         return '#d7a00b';
+      case 'qoo10':
+        return '#fb4136';
       default:
         return '#666666';
     }

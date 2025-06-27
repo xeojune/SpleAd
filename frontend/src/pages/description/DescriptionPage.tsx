@@ -8,6 +8,7 @@ import { ParticipationGuide } from '../../components/description/ParticipationGu
 import VerificationGuide from '../../components/description/VerificationGuide';
 import { Caution } from '../../components/description/Caution';
 import { DescriptionFooter } from '../../components/description/DescriptionFooter';
+import PostGuide from '../../components/description/PostGuide';
 
 const ContentContainer = styled.div`
   flex: 1;
@@ -17,18 +18,22 @@ const ContentContainer = styled.div`
 
 interface CampaignData {
   image: string;
-  productName: string;
+  productName: string | string[];
+  title: string;
   description: string;
   platforms: string[];
   brand: string;
+  type: string;
   recruitmentPeriod: string;
   announcementDate: string;
   participantCount: string;
+  participationMethod?: string[];
+  participationDetails?: string;  
   postPeriod: string;
-  campaignBadges: string[];
-  participationMethod: string[];
-  participationDetails: string;
+  purchaseTime: string;
   compensation: string;
+  isPurchase: boolean;
+  reviewReqs?: string[];  
 }
 
 const DescriptionPage: React.FC = () => {
@@ -41,7 +46,7 @@ const DescriptionPage: React.FC = () => {
 
   return (
     <>
-      <DescriptionHeader productName={campaign.productName} />
+      <DescriptionHeader title={campaign.title} />
       <ContentContainer>
         <DescriptionBanner
           image={campaign.image}
@@ -49,19 +54,23 @@ const DescriptionPage: React.FC = () => {
         />
         <DescriptionInfo
           brand={campaign.brand}
+          type={campaign.type}
           productName={campaign.productName}
-          description={campaign.description}
+          title={campaign.title}
           recruitmentPeriod={campaign.recruitmentPeriod}
           announcementDate={campaign.announcementDate}
           participantCount={campaign.participantCount}
           postPeriod={campaign.postPeriod}
+          purchaseTime={campaign.purchaseTime}
           platforms={campaign.platforms}
-          campaignBadges={campaign.campaignBadges}
           participationMethod={campaign.participationMethod}
-          participationDetails={campaign.participationDetails}
+          participationDetails={campaign.type === 'レビュー' ? undefined : campaign.participationDetails}
           compensation={campaign.compensation}
+          isPurchase={campaign.isPurchase}
+          reviewReqs={campaign.type === 'レビュー' ? campaign.reviewReqs : undefined}
         />
         <ParticipationGuide />
+        <PostGuide type={campaign.type} />
         <VerificationGuide />
         <Caution />
         <DescriptionFooter />

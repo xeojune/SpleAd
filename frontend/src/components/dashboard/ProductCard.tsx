@@ -10,6 +10,10 @@ const CardTitle = styled.h3`
   font-weight: 600;
   color: #6b7280;
   margin: 0 0 0.25rem 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
 `;
 
 const CardDescription = styled.p`
@@ -59,6 +63,8 @@ interface ProductCardProps {
   participationDetails?: string;
   postPeriod?: string;
   compensation?: string;
+  purchaseTime?: string;
+  reviewReqs?: string[];
 }
 
 const ProductCard: React.FC<ProductCardProps> = ({
@@ -76,7 +82,9 @@ const ProductCard: React.FC<ProductCardProps> = ({
   participationMethod,
   participationDetails,
   postPeriod,
-  compensation
+  compensation,
+  purchaseTime,
+  reviewReqs
 }) => {
   const navigate = useNavigate();
   const status = recruitmentPeriod ? getRecruitmentStatus(recruitmentPeriod) : null;
@@ -98,8 +106,12 @@ const ProductCard: React.FC<ProductCardProps> = ({
         participationMethod,
         participationDetails,
         postPeriod,
+        purchaseTime,
         compensation,
-        status
+        reviewReqs,
+        status,
+        isPurchase: type === '購入',
+        currentTab: type
       }
     });
   };
@@ -125,14 +137,14 @@ const ProductCard: React.FC<ProductCardProps> = ({
         </TagContainer>
         <CardTitle>{brand}</CardTitle>
         <CardDescription>
-          {Array.isArray(productName) 
-            ? productName.map((name, index) => (
+          {Array.isArray(description) 
+            ? description.map((name, index) => (
                 <React.Fragment key={index}>
                   {name}
-                  {index < productName.length - 1 && <>, <br /></>}
+                  {index < description.length - 1 && <>, <br /></>}
                 </React.Fragment>
               ))
-            : productName}
+            : description}
         </CardDescription>
         {campaignBadges && campaignBadges.length > 0 && (
           <MetricsContainer>

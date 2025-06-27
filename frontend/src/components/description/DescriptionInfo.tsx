@@ -26,6 +26,7 @@ const Tag = styled.span<{ platform: string }>`
       case 'x(twitter)': return '#E5E7EB';
       case 'tiktok': return '#000000';
       case 'loft': return '#fff1c1';
+      case 'qoo10': return '#fee1df';
       default: return '#f0f0f0';
     }
   }};
@@ -37,23 +38,10 @@ const Tag = styled.span<{ platform: string }>`
       case 'x(twitter)': return '#4B5563';
       case 'tiktok': return '#FFFFFF';
       case 'loft': return '#d7a00b';
+      case 'qoo10': return '#fb4136';
       default: return '#666666';
     }
   }};
-`;
-
-const BadgeContainer = styled.div`
-  display: flex;
-  gap: 0.5rem;
-  flex-wrap: wrap;
-`;
-
-const Badge = styled.span`
-  padding: 0.25rem 0.75rem;
-  border-radius: 1rem;
-  font-size: 0.75rem;
-  background: #FFF1F5;
-  color: #FF4D82;
 `;
 
 const Title = styled.h1`
@@ -108,31 +96,38 @@ const Divider = styled.hr`
 
 interface DescriptionInfoProps {
   brand: string;
+  type: string;
   productName: string | string[];
-  description: string | string[];
+  title: string;
   recruitmentPeriod: string;
   announcementDate: string;
   participantCount: string;
   postPeriod: string;
+  purchaseTime?: string;
   platforms: string[];
-  campaignBadges?: string[];
   participationMethod?: string[];
   participationDetails?: string;
   compensation?: string;
+  isPurchase: boolean;
+  reviewReqs?: string[];
 }
 
 const DescriptionInfo: React.FC<DescriptionInfoProps> = ({
   brand,
+  type,
   productName,
-  description,
+  title,
   recruitmentPeriod,
   announcementDate,
   participantCount,
   postPeriod,
+  purchaseTime,
   platforms,
   participationMethod,
   participationDetails,
-  compensation
+  compensation,
+  isPurchase,
+  reviewReqs
 }) => {
   return (
     <Container>
@@ -145,16 +140,27 @@ const DescriptionInfo: React.FC<DescriptionInfoProps> = ({
       </PlatformTags>
       
       <div>
-        <Title>{Array.isArray(productName) ? productName.join(',') : productName}</Title>
+        <Title>{title}</Title>
       </div>
 
       <InfoGrid>
         <Label>ブランド</Label>
         <Value>{brand}</Value>
-        
+
         <Label>商品名</Label>
-        <Value>{Array.isArray(productName) ? productName.join(',') : productName}</Value>
-        
+        <Value>
+          {Array.isArray(productName) ? (
+            productName.map((name, index) => (
+              <React.Fragment key={index}>
+                {name}
+                {index < productName.length - 1 && <br />}
+              </React.Fragment>
+            ))
+          ) : (
+            productName
+          )}
+        </Value>
+
         <Label>募集期間</Label>
         <Value>{recruitmentPeriod}</Value>
 
@@ -164,16 +170,14 @@ const DescriptionInfo: React.FC<DescriptionInfoProps> = ({
         <Label>募集人数</Label>
         <Value>{participantCount}名</Value>
 
-        {participationMethod && participationMethod.length > 0 && (
+        {!isPurchase && participationMethod && participationMethod.length > 0 && (
           <>
             <Label>参加方法</Label>
             <Value>
               {participationMethod.map((method, index) => (
                 <React.Fragment key={index}>
                   {method.startsWith('-') ? (
-                    <BulletList>
-                      <BulletItem>{method.substring(1).trim()}</BulletItem>
-                    </BulletList>
+                    <div style={{ marginLeft: '1rem' }}>{method}</div>
                   ) : (
                     <>
                       {method}
@@ -186,15 +190,41 @@ const DescriptionInfo: React.FC<DescriptionInfoProps> = ({
           </>
         )}
 
-        <Label>参加条件</Label>
-        <Value>{participationDetails}</Value>
+        {(type === '購入' || type === 'モニター') && participationDetails && (
+          <>
+            <Label>参加条件</Label>
+            <Value>{participationDetails}</Value>
+          </>
+        )}
+        {(type === 'レビュー') && reviewReqs && (
+          <>
+            <Label>レビュー要件</Label>
+            <Value style={{ color: 'red' }}>{reviewReqs.join(', ')}</Value>
+          </>
+        )}
+
         
-        <Label>投稿期間</Label>
-        <Value>{postPeriod}</Value>
+        {(type === '購入' || type === 'レビュー') && purchaseTime && (
+          <>
+            <Label>購入可能時間</Label>
+            <Value>{purchaseTime}</Value>
+          </>
+        )}
+
+        {(type === 'モニター' || type === 'レビュー') && postPeriod && (
+          <>
+            <Label>{type === 'モニター' ? '投稿期間' : 'レビュー期限'}</Label>
+            <Value>{postPeriod}</Value>
+          </>
+        )}
 
         {compensation && (
           <>
-            <Label>報酬</Label>
+            <Label>
+              {type === 'モニター' && '報酬'}
+              {type === '購入' && 'リワード返金内容'}
+              {type === 'レビュー' && '謝礼'}
+            </Label>
             <Value>{compensation}</Value>
           </>
         )}
